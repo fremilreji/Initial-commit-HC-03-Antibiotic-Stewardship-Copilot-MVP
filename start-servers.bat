@@ -1,4 +1,5 @@
 @echo off
+set "PATH=D:\node;%PATH%"
 echo ========================================================
 echo   HC-03: Antibiotic Stewardship Copilot - Launcher
 echo ========================================================
