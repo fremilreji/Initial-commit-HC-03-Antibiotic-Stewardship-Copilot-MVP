@@ -43,20 +43,23 @@ Extract the following fields:
 
 If any field is missing from the image, return null for that field."""
 
+# ── Load reference data once at startup (not on every request) ──
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(_BASE_DIR, "brands.json"), "r", encoding="utf-8") as _f:
+    BRANDS = json.load(_f)
+
+with open(os.path.join(_BASE_DIR, "benchmarks.json"), "r", encoding="utf-8") as _f:
+    BENCHMARKS = json.load(_f)
+
 
 def evaluate_prescriptions(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Applies clinical benchmark checks and guideline rules to the extracted prescription data.
+    Uses module-level cached BRANDS and BENCHMARKS dicts (loaded once at startup).
     """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    brands_path = os.path.join(base_dir, "brands.json")
-    benchmarks_path = os.path.join(base_dir, "benchmarks.json")
-
-    with open(brands_path, "r", encoding="utf-8") as f:
-        brands = json.load(f)
-
-    with open(benchmarks_path, "r", encoding="utf-8") as f:
-        benchmarks = json.load(f)
+    brands = BRANDS
+    benchmarks = BENCHMARKS
 
     diagnosis = data.get("diagnosis") or ""
     comorbidities = data.get("comorbidities") or []
@@ -158,6 +161,18 @@ def evaluate_prescriptions(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
+@app.get("/api/health")
+async def health_check():
+    """Quick health check endpoint — returns system status and loaded data counts."""
+    return {
+        "status": "ok",
+        "engine": "HC-03 Antibiotic Stewardship Copilot",
+        "brands_loaded": len(BRANDS),
+        "benchmarks_loaded": len(BENCHMARKS),
+        "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),
+    }
+
+
 @app.post("/api/analyze-prescription")
 async def analyze_prescription(file: UploadFile = File(...)) -> Dict[str, Any]:
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -238,12 +253,19 @@ async def analyze_prescription(file: UploadFile = File(...)) -> Dict[str, Any]:
 
         raw_text = response.text.strip()
 
-        # Remove markdown code block fences if present
-        if raw_text.startswith("```"):
-            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
-            raw_text = re.sub(r"\s*```$", "", raw_text)
+        # Robust JSON extraction: strip markdown fences anywhere in response
+        raw_text = re.sub(r"```(?:json)?\s*", "", raw_text)
+        raw_text = re.sub(r"\s*```", "", raw_text).strip()
 
-        parsed_json = json.loads(raw_text)
+        # Try direct parse first; fallback to regex extraction of first JSON object
+        try:
+            parsed_json = json.loads(raw_text)
+        except json.JSONDecodeError:
+            match = re.search(r"(\{.*\}|\[.*\])", raw_text, re.DOTALL)
+            if match:
+                parsed_json = json.loads(match.group(1))
+            else:
+                raise
 
         # Apply clinical benchmarks and generate alert flags
         enriched_data = evaluate_prescriptions(parsed_json)
@@ -297,7 +319,8 @@ async def analyze_csv(file: UploadFile = File(...)) -> Dict[str, Any]:
             frequency = cleaned_row.get("frequency") or "BD"
             duration_str = cleaned_row.get("duration_days") or cleaned_row.get("duration") or "5"
             try:
-                duration_days = int(re.sub(r"\D", "", duration_str)) if re.sub(r"\D", "", duration_str) else 5
+                # Use float parsing first to handle decimals like "5.5" correctly
+                duration_days = int(round(float(re.search(r"[\d.]+", duration_str).group()))) if re.search(r"[\d.]+", duration_str) else 5
             except Exception:
                 duration_days = 5
 

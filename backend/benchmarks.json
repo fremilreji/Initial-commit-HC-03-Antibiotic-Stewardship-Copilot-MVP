@@ -1,1 +1,170 @@
-{"Amoxicillin-Clavulanate": { "aware_class": "Access", "max_duration_days": 5, "requires_culture": false, "local_resistance_flag": "30%", "step_down_alternative": "Amoxicillin", "renal_dose_adjustment_required": false }, "Ceftriaxone": { "aware_class": "Watch", "max_duration_days": 7, "requires_culture": true, "local_resistance_flag": "42%", "step_down_alternative": "Amoxicillin-Clavulanate", "renal_dose_adjustment_required": false }, "Meropenem": { "aware_class": "Watch", "max_duration_days": 14, "requires_culture": true, "local_resistance_flag": "45%", "step_down_alternative": "Piperacillin-Tazobactam", "renal_dose_adjustment_required": true }, "Colistin": { "aware_class": "Reserve", "max_duration_days": 14, "requires_culture": true, "local_resistance_flag": "5%", "step_down_alternative": "Ceftazidime-Avibactam", "renal_dose_adjustment_required": true }, "Nitrofurantoin": { "aware_class": "Access", "max_duration_days": 5, "requires_culture": false, "local_resistance_flag": "20%", "step_down_alternative": "None", "renal_dose_adjustment_required": false }}
+{
+  "Amoxicillin-Clavulanate": {
+    "aware_class": "Access",
+    "max_duration_days": 5,
+    "requires_culture": false,
+    "local_resistance_flag": "30%",
+    "step_down_alternative": "Amoxicillin",
+    "renal_dose_adjustment_required": false
+  },
+  "Amoxicillin": {
+    "aware_class": "Access",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "45%",
+    "step_down_alternative": null,
+    "renal_dose_adjustment_required": false
+  },
+  "Ceftriaxone": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": true,
+    "local_resistance_flag": "42%",
+    "step_down_alternative": "Amoxicillin-Clavulanate",
+    "renal_dose_adjustment_required": false
+  },
+  "Cefixime": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "38%",
+    "step_down_alternative": "Amoxicillin-Clavulanate",
+    "renal_dose_adjustment_required": false
+  },
+  "Ceftazidime": {
+    "aware_class": "Watch",
+    "max_duration_days": 10,
+    "requires_culture": true,
+    "local_resistance_flag": "40%",
+    "step_down_alternative": "Cefixime",
+    "renal_dose_adjustment_required": true
+  },
+  "Ciprofloxacin": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "65%",
+    "step_down_alternative": "Nitrofurantoin",
+    "renal_dose_adjustment_required": true
+  },
+  "Levofloxacin": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "60%",
+    "step_down_alternative": "Amoxicillin-Clavulanate",
+    "renal_dose_adjustment_required": true
+  },
+  "Azithromycin": {
+    "aware_class": "Watch",
+    "max_duration_days": 5,
+    "requires_culture": false,
+    "local_resistance_flag": "50%",
+    "step_down_alternative": "Amoxicillin",
+    "renal_dose_adjustment_required": false
+  },
+  "Meropenem": {
+    "aware_class": "Watch",
+    "max_duration_days": 14,
+    "requires_culture": true,
+    "local_resistance_flag": "45%",
+    "step_down_alternative": "Piperacillin-Tazobactam",
+    "renal_dose_adjustment_required": true
+  },
+  "Piperacillin-Tazobactam": {
+    "aware_class": "Watch",
+    "max_duration_days": 10,
+    "requires_culture": true,
+    "local_resistance_flag": "25%",
+    "step_down_alternative": "Amoxicillin-Clavulanate",
+    "renal_dose_adjustment_required": true
+  },
+  "Nitrofurantoin": {
+    "aware_class": "Access",
+    "max_duration_days": 5,
+    "requires_culture": false,
+    "local_resistance_flag": "20%",
+    "step_down_alternative": null,
+    "renal_dose_adjustment_required": false
+  },
+  "Linezolid": {
+    "aware_class": "Reserve",
+    "max_duration_days": 14,
+    "requires_culture": true,
+    "local_resistance_flag": "2%",
+    "step_down_alternative": "Vancomycin",
+    "renal_dose_adjustment_required": false
+  },
+  "Colistin": {
+    "aware_class": "Reserve",
+    "max_duration_days": 14,
+    "requires_culture": true,
+    "local_resistance_flag": "5%",
+    "step_down_alternative": "Ceftazidime-Avibactam",
+    "renal_dose_adjustment_required": true
+  },
+  "Metronidazole": {
+    "aware_class": "Access",
+    "max_duration_days": 10,
+    "requires_culture": false,
+    "local_resistance_flag": "5%",
+    "step_down_alternative": null,
+    "renal_dose_adjustment_required": false
+  },
+  "Doxycycline": {
+    "aware_class": "Access",
+    "max_duration_days": 14,
+    "requires_culture": false,
+    "local_resistance_flag": "30%",
+    "step_down_alternative": "Azithromycin",
+    "renal_dose_adjustment_required": false
+  },
+  "Amikacin": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": true,
+    "local_resistance_flag": "15%",
+    "step_down_alternative": "Ciprofloxacin",
+    "renal_dose_adjustment_required": true
+  },
+  "Gentamicin": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": true,
+    "local_resistance_flag": "35%",
+    "step_down_alternative": "Amikacin",
+    "renal_dose_adjustment_required": true
+  },
+  "Vancomycin": {
+    "aware_class": "Watch",
+    "max_duration_days": 14,
+    "requires_culture": true,
+    "local_resistance_flag": "3%",
+    "step_down_alternative": "Linezolid",
+    "renal_dose_adjustment_required": true
+  },
+  "Cotrimoxazole": {
+    "aware_class": "Access",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "55%",
+    "step_down_alternative": "Nitrofurantoin",
+    "renal_dose_adjustment_required": true
+  },
+  "Ofloxacin": {
+    "aware_class": "Watch",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "62%",
+    "step_down_alternative": "Nitrofurantoin",
+    "renal_dose_adjustment_required": true
+  },
+  "Clindamycin": {
+    "aware_class": "Access",
+    "max_duration_days": 7,
+    "requires_culture": false,
+    "local_resistance_flag": "25%",
+    "step_down_alternative": "Amoxicillin-Clavulanate",
+    "renal_dose_adjustment_required": false
+  }
+}

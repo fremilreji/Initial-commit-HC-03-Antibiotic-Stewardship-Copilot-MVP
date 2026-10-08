@@ -45,7 +45,8 @@ export function ReviewDetail({ review, decision, onDecide, onUndo, onNew }: Prop
   // Ultra-fast keyboard triage shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+      const el = e.target as HTMLElement
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName) || el?.isContentEditable) return
 
       const key = e.key.toLowerCase()
       if (key === 'v') {

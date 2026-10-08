@@ -10,6 +10,8 @@ import { GUIDELINES } from '@/lib/stewardship/data'
 import { mapFastApiResponseToPrescriptions, type FastApiResponse } from '@/lib/stewardship/ai-mapper'
 import type { Prescription } from '@/lib/stewardship/types'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+
 interface ParsedFile {
   name: string
   rows: Prescription[]
@@ -55,21 +57,14 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
 
           let response: Response
           try {
-            response = await fetch('http://127.0.0.1:8000/api/analyze-prescription', {
+            response = await fetch(`${API_BASE}/api/analyze-prescription`, {
               method: 'POST',
               body: formData,
             })
           } catch {
-            try {
-              response = await fetch('http://localhost:8000/api/analyze-prescription', {
-                method: 'POST',
-                body: formData,
-              })
-            } catch {
-              throw new Error(
-                'Could not connect to FastAPI backend at http://127.0.0.1:8000. Please ensure the backend server is running.'
-              )
-            }
+            throw new Error(
+              `Could not connect to FastAPI backend at ${API_BASE}. Please ensure the backend server is running.`
+            )
           }
 
           if (!response.ok) {
@@ -231,7 +226,7 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
         </div>
 
         {uploadError && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20" role="alert">
+          <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20" role="alert" aria-live="assertive">
             <p className="font-semibold">Analysis Failed</p>
             <p className="mt-1">{uploadError}</p>
           </div>
