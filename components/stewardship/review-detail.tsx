@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlertTriangle, ArrowRight, CheckCircle2, CircleSlash, Plus, RotateCcw, Send, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -41,6 +41,47 @@ export function ReviewDetail({ review, decision, onDecide, onUndo, onNew }: Prop
   const selectedPrescription = review.rx
   const firstRxItem = selectedPrescription.prescriptions?.[0]
   const isVerified = verifiedRxId === selectedPrescription.id
+
+  // Ultra-fast keyboard triage shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+
+      const key = e.key.toLowerCase()
+      if (key === 'v') {
+        e.preventDefault()
+        setVerifiedRxId(selectedPrescription.id)
+        toast('Extracted text verified [Key V]', 'success')
+      } else if (key === '1' || key === 'a') {
+        e.preventDefault()
+        setVerifiedRxId(selectedPrescription.id)
+        onDecide('accepted', note || 'Suggestion approved: switched to guideline alternative')
+        toast('Suggestion approved: switched to guideline alternative [Key 1]', 'success')
+        setNote('')
+      } else if (key === '2' || key === 's') {
+        e.preventDefault()
+        setVerifiedRxId(selectedPrescription.id)
+        onDecide('escalated', note || 'Sent to prescribing clinician for clarification')
+        toast('Sent to prescriber for clarification [Key 2]', 'info')
+        setNote('')
+      } else if (key === '3' || key === 'w') {
+        e.preventDefault()
+        setVerifiedRxId(selectedPrescription.id)
+        onDecide('approved_as_written', note || 'Approved as written by pharmacist')
+        toast('Prescription approved as written by pharmacist [Key 3]', 'warning')
+        setNote('')
+      } else if (key === 'z' || key === 'u') {
+        if (decision) {
+          e.preventDefault()
+          onUndo()
+          toast('Decision undone [Key Z]', 'info')
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedPrescription?.id, note, decision, onDecide, onUndo, toast])
 
   const isNonAntibiotic = Boolean(
     firstRxItem?.flags?.some((f) => f.includes('NON-ANTIBIOTIC')) ||
@@ -375,38 +416,44 @@ export function ReviewDetail({ review, decision, onDecide, onUndo, onNew }: Prop
             <Button
               variant="default"
               onClick={() => {
+                setVerifiedRxId(selectedPrescription.id)
                 onDecide('accepted', note || 'Suggestion approved: switched to guideline alternative')
                 toast('Suggestion approved: switched to guideline alternative', 'success')
                 setNote('')
               }}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
             >
               <CheckCircle2 className="size-4" />
               Approve suggestion
+              <kbd className="ml-1 rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-mono font-medium">1</kbd>
             </Button>
             <Button
               variant="outline"
               onClick={() => {
+                setVerifiedRxId(selectedPrescription.id)
                 onDecide('escalated', note || 'Sent to prescribing clinician for clarification')
                 toast('Sent to prescriber for clarification', 'info')
                 setNote('')
               }}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
             >
               <Send className="size-4" />
               Send to prescriber
+              <kbd className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono font-medium">2</kbd>
             </Button>
             <Button
               variant="outline"
               onClick={() => {
+                setVerifiedRxId(selectedPrescription.id)
                 onDecide('approved_as_written', note || 'Approved as written by pharmacist')
                 toast('Prescription approved as written by pharmacist', 'warning')
                 setNote('')
               }}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
             >
               <AlertTriangle className="size-4 text-warning" />
               Approve as written
+              <kbd className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono font-medium">3</kbd>
             </Button>
           </div>
         </section>
