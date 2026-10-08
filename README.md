@@ -5,6 +5,17 @@
 
 ---
 
+## 👥 Core Contributors & Project Team
+
+| Contributor | Role & Domain | Primary Responsibilities |
+| :--- | :--- | :--- |
+| **Fremil Reji** | Lead Systems Architect | System integration, AI pipeline, and deployment |
+| **Shivani** | Frontend Engineer | Next.js UI, Stewardship Desk dashboard, interactive components |
+| **Vaishnavi** | Backend & Rules Engineer | FastAPI REST API, deterministic clinical engine, benchmarks mapping |
+| **Nakshatra** | Clinical Informatics & QA | Clinical test cases, ICMR guideline mapping, demo workflows |
+
+---
+
 ## 📁 Unified Project Structure
 
 All files for the frontend, backend, rules engine, datasets, and launcher scripts are consolidated inside this single repository:
