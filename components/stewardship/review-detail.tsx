@@ -87,7 +87,7 @@ export function ReviewDetail({ review, decision, onDecide, onUndo, onNew }: Prop
   const isNonAntibiotic = Boolean(
     firstRxItem?.flags?.some((f) => f.includes('NON-ANTIBIOTIC')) ||
     selectedPrescription.flags?.some((f) => f.includes('NON-ANTIBIOTIC')) ||
-    (selectedPrescription as any).isAntibiotic === false ||
+    selectedPrescription.isAntibiotic === false ||
     (firstRxItem?.brandName?.toLowerCase().includes('lisinopril')) ||
     (selectedPrescription.brandName?.toLowerCase().includes('lisinopril'))
   )
