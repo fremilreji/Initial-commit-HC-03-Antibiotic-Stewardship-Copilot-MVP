@@ -1,6 +1,6 @@
 /**
  * Stewardship Desk UI Theme & Presentation Config
- * Author: Shivani (20babushivani@gmail.com)
+ * Author: Shivani (@20babushivani-wq)
  * Project: HC-03 Antibiotic Stewardship Copilot
  */
 
