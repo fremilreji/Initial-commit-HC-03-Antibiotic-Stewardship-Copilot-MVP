@@ -1,3 +1,4 @@
+import csv
 import io
 import json
 import os
@@ -260,6 +261,75 @@ async def analyze_prescription(file: UploadFile = File(...)) -> Dict[str, Any]:
             status_code=500,
             detail=f"An error occurred while analyzing the prescription: {str(e)}",
         )
+
+
+@app.post("/api/analyze-csv")
+async def analyze_csv(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """
+    Ingests structured hospital prescription CSV files at ZERO token cost.
+    Bypasses Vision AI and directly executes local deterministic clinical rules.
+    """
+    try:
+        contents = await file.read()
+        text = contents.decode("utf-8-sig", errors="replace")
+        reader = csv.DictReader(io.StringIO(text))
+        
+        batch_records = []
+        for row in reader:
+            cleaned_row = {k.strip().lower(): (v.strip() if v else "") for k, v in row.items() if k}
+            
+            age_str = cleaned_row.get("age") or cleaned_row.get("patient_age") or "0"
+            try:
+                age = int(re.sub(r"\D", "", age_str)) if re.sub(r"\D", "", age_str) else None
+            except Exception:
+                age = None
+
+            gender = cleaned_row.get("gender") or cleaned_row.get("patient_gender") or None
+            diagnosis = cleaned_row.get("diagnosis") or ""
+            comorbidities_raw = cleaned_row.get("comorbidities") or cleaned_row.get("comorbidity") or ""
+            comorbidities = [c.strip() for c in re.split(r"[,;|]", comorbidities_raw) if c.strip()]
+            
+            culture_raw = cleaned_row.get("culture_ordered") or cleaned_row.get("culture") or "false"
+            culture_ordered = culture_raw.lower() in ("true", "1", "yes", "y")
+            
+            brand_name = cleaned_row.get("brand_name") or cleaned_row.get("drug") or cleaned_row.get("antibiotic") or ""
+            route = cleaned_row.get("route") or "Oral"
+            frequency = cleaned_row.get("frequency") or "BD"
+            duration_str = cleaned_row.get("duration_days") or cleaned_row.get("duration") or "5"
+            try:
+                duration_days = int(re.sub(r"\D", "", duration_str)) if re.sub(r"\D", "", duration_str) else 5
+            except Exception:
+                duration_days = 5
+
+            patient_data = {
+                "patient_age": age,
+                "patient_gender": gender,
+                "diagnosis": diagnosis,
+                "comorbidities": comorbidities,
+                "investigations_ordered": [],
+                "culture_ordered": culture_ordered,
+                "prescriptions": [
+                    {
+                        "brand_name": brand_name,
+                        "route": route,
+                        "frequency": frequency,
+                        "duration_days": duration_days,
+                    }
+                ]
+            }
+            
+            enriched = evaluate_prescriptions(patient_data)
+            batch_records.append(enriched)
+            
+        return {
+            "status": "success",
+            "total_processed": len(batch_records),
+            "token_cost": 0,
+            "engine": "Deterministic Local Python Rules Engine (ICMR 2024)",
+            "records": batch_records
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
 
 
 if __name__ == "__main__":
