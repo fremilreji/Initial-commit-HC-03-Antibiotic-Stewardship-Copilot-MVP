@@ -1,7 +1,7 @@
 # Clinical Validation & Benchmark Test Cases
 
 **Domain:** Clinical Decision Support System (CDSS) for Antibiotic Stewardship  
-**Lead Evaluator:** Nakshatra (`nakshatrachinthaleapling@gmail.com`)  
+**Lead Evaluator:** Nakshatra ([@Nakshatra-29](https://github.com/Nakshatra-29))  
 **Guidelines Reference:** ICMR 2024 & WHO AWaRe (Access, Watch, Reserve)
 
 ---
