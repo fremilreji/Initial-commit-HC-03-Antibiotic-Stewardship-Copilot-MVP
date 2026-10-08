@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMS Review – Antibiotic Stewardship Working Model</title>
+<meta name="description" content="Standalone HTML working model: reviews antibiotic prescriptions against the local antibiogram and hospital guidelines, flags inappropriate use and suggests safer options for pharmacist approval.">
+<style>
+  :root {
+    --bg: #f6f7f7; --surface: #ffffff; --muted: #f1f3f3; --border: #e3e6e6;
+    --text: #15191a; --text-2: #5d6668; --primary: #0f766e; --primary-fg: #ffffff;
+    --crit: #c2410c; --crit-bg: #fff1e8; --major: #b45309; --major-bg: #fff7e0;
+    --minor: #2563eb; --minor-bg: #eaf1ff; --ok: #15803d; --ok-bg: #e9f8ee;
+    --radius: 12px; --shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1112; --surface: #151a1b; --muted: #1c2324; --border: #283132;
+      --text: #ecf0f0; --text-2: #97a3a5; --primary: #2dd4bf; --primary-fg: #04201d;
+      --crit: #fb923c; --crit-bg: #2b1a10; --major: #fbbf24; --major-bg: #2a220c;
+      --minor: #60a5fa; --minor-bg: #101d33; --ok: #4ade80; --ok-bg: #0f2617;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .muted { color: var(--text-2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .shell { max-width: 1280px; margin: 0 auto; padding: 12px; }
+  .frame { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); min-height: calc(100vh - 24px); display: flex; flex-direction: column; }
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--primary); color: var(--primary-fg); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  .brand h1 { font-size: 18px; margin: 0; letter-spacing: -.01em; }
+  .brand p { margin: 0; font-size: 12px; color: var(--text-2); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
+  .btn:hover { background: var(--muted); }
+  .btn:focus-visible, .chip:focus-visible, .tab:focus-visible, .rx-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+  .btn-primary:hover { background: var(--primary); filter: brightness(1.08); }
+  .btn-danger { color: var(--crit); }
+  .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
+  .btn svg { width: 16px; height: 16px; }
+
+  nav.tabs { display: flex; gap: 4px; padding: 10px 24px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { border: 0; background: none; padding: 10px 12px; border-bottom: 2px solid transparent; color: var(--text-2); cursor: pointer; font-weight: 500; white-space: nowrap; }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--primary); }
+
+  main { padding: 20px 24px 28px; flex: 1; }
+  .panel[hidden] { display: none; }
+
+  /* Summary — distribution bar + cards */
+  .summary { margin-bottom: 20px; }
+  .summary-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .summary-head .label { color: var(--text-2); font-size: 13px; }
+  .summary-head .big { font-size: 32px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .dist { display: flex; gap: 3px; height: 10px; margin: 14px 0; border-radius: 999px; overflow: hidden; background: var(--muted); }
+  .dist span { display: block; height: 100%; transition: width .3s; }
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; background: var(--surface); }
+  .card .k { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 13px; }
+  .card .v { font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+
+  /* Review layout */
+  .review { display: flex; gap: 16px; align-items: flex-start; }
+  .queue { width: 340px; flex: none; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .queue-tools { padding: 10px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .input, select.input, textarea.input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+  textarea.input { height: auto; min-height: 64px; padding: 8px 10px; resize: vertical; }
+  .input:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: transparent; }
+  .input[aria-invalid="true"] { border-color: var(--crit); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--text-2); }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .rx-list { list-style: none; margin: 0; padding: 0; max-height: 640px; overflow-y: auto; }
+  .rx-item { display: flex; gap: 10px; width: 100%; text-align: left; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--border); background: none; cursor: pointer; }
+  .rx-item:hover { background: var(--muted); }
+  .rx-item[aria-current="true"] { background: var(--muted); box-shadow: inset 3px 0 0 var(--primary); }
+  .rx-item .bar { width: 4px; border-radius: 4px; flex: none; align-self: stretch; }
+  .rx-item .body { min-width: 0; flex: 1; }
+  .rx-item .row { display: flex; justify-content: space-between; gap: 8px; }
+  .rx-item .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rx-item .sub { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { padding: 28px 16px; text-align: center; color: var(--text-2); }
+
+  .detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .box { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: var(--surface); }
+  .box h2 { font-size: 15px; margin: 0 0 10px; }
+  .box h3 { font-size: 13px; margin: 0 0 8px; color: var(--text-2); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .patient-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+  .patient-head h2 { font-size: 20px; margin: 0; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px 16px; margin: 14px 0 0; }
+  .facts dt { font-size: 12px; color: var(--text-2); }
+  .facts dd { margin: 0; font-weight: 500; }
+  .regimen { margin-top: 14px; padding: 12px; border-radius: 10px; background: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .regimen strong { font-size: 15px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .b-critical { background: var(--crit-bg); color: var(--crit); }
+  .b-major { background: var(--major-bg); color: var(--major); }
+  .b-minor { background: var(--minor-bg); color: var(--minor); }
+  .b-ok { background: var(--ok-bg); color: var(--ok); }
+  .b-neutral { background: var(--muted); color: var(--text-2); }
+
+  .findings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .finding { display: flex; gap: 12px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+  .finding .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; font-weight: 700; font-size: 12px; }
+  .finding .t { font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .finding p { margin: 2px 0 0; color: var(--text-2); }
+
+  .suggest { border-color: var(--primary); }
+  .suggest .rx-line { font-size: 16px; font-weight: 600; margin: 4px 0 10px; }
+  .suggest ul { margin: 0; padding-left: 18px; color: var(--text-2); }
+  .suggest li + li { margin-top: 3px; }
+  .compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .compare > div { padding: 10px 12px; border-radius: 10px; background: var(--muted); font-size: 13px; }
+  .compare .from { text-decoration: line-through; color: var(--text-2); }
+  .compare .arrow { color: var(--text-2); }
+
+  .cov-row { display: grid; grid-template-columns: 170px 1fr 48px; gap: 10px; align-items: center; padding: 5px 0; font-size: 13px; }
+  .cov-track { height: 8px; border-radius: 999px; background: var(--muted); position: relative; overflow: hidden; }
+  .cov-fill { height: 100%; border-radius: 999px; }
+  .cov-target { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text); opacity: .5; }
+
+  .decision-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .decided { padding: 12px; border-radius: 10px; background: var(--ok-bg); color: var(--ok); }
+  .decided.rejected { background: var(--crit-bg); color: var(--crit); }
+  .decided.escalated { background: var(--major-bg); color: var(--major); }
+
+  /* Antibiogram */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; white-space: nowrap; }
+  th { font-weight: 600; background: var(--muted); position: sticky; top: 0; }
+  td:first-child, th:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); }
+  th:first-child { background: var(--muted); }
+  .s-hi { background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+  .s-mid { background: var(--major-bg); color: var(--major); font-weight: 600; }
+  .s-lo { background: var(--crit-bg); color: var(--crit); font-weight: 600; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 14px; font-size: 13px; color: var(--text-2); }
+
+  .g-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+  .g-opt { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 13px; }
+
+  /* Dialog */
+  dialog { border: 1px solid var(--border); border-radius: 16px; padding: 0; background: var(--surface); color: var(--text); width: min(1040px, calc(100vw - 24px)); max-height: calc(100vh - 24px); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .dlg-head h2 { margin: 0; font-size: 17px; }
+  .dlg-body { display: flex; gap: 18px; padding: 18px 20px; overflow-y: auto; max-height: calc(100vh - 160px); }
+  .dlg-form { flex: 1.3; min-width: 0; }
+  .dlg-live { flex: 1; min-width: 0; }
+  fieldset { border: 0; padding: 0; margin: 0 0 16px; }
+  legend { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); margin-bottom: 8px; }
+  .fgrid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+  .fgrid .span-2 { grid-column: span 2; }
+  .fgrid .span-3 { grid-column: span 3; }
+  .field label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+  .check { display: flex; align-items: center; gap: 8px; height: 36px; }
+  .check input { width: 16px; height: 16px; accent-color: var(--primary); }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .err { color: var(--crit); font-size: 12px; margin-top: 3px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--surface); padding: 10px 16px; border-radius: 10px; opacity: 0; transition: .25s; pointer-events: none; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px) {
+    .review { flex-direction: column; }
+    .queue { width: 100%; }
+    .rx-list { max-height: 320px; }
+    .facts { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .g-grid { grid-template-columns: 1fr; }
+    .dlg-body { flex-direction: column; }
+    .compare { grid-template-columns: 1fr; }
+    .compare .arrow { display: none; }
+  }
+  @media (max-width: 560px) {
+    header.top, main { padding-left: 14px; padding-right: 14px; }
+    nav.tabs { padding-left: 14px; }
+    .fgrid { grid-template-columns: 1fr 1fr; }
+    .fgrid .span-3 { grid-column: span 2; }
+    .cov-row { grid-template-columns: 110px 1fr 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="frame">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">AMS</div>
+        <div>
+          <h1>Stewardship Review</h1>
+          <p>Antibiogram <span id="period"></span> · pharmacist verification</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+          Export decisions
+        </button>
+        <button class="btn btn-primary" id="newBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          New prescription
+        </button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="p-review" id="t-review" data-tab="review">Review queue</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-abg" id="t-abg" data-tab="abg">Local antibiogram</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-guide" id="t-guide" data-tab="guide">Treatment guidelines</button>
+    </nav>
+
+    <main>
+      <section class="panel" id="p-review" role="tabpanel" aria-labelledby="t-review">
+        <div class="summary" aria-live="polite">
+          <div class="summary-head">
+            <div>
+              <div class="label">Prescriptions reviewed today</div>
+              <div class="big" id="totalCount">0</div>
+            </div>
+            <div class="muted" id="flagRate"></div>
+          </div>
+          <div class="dist" id="dist" role="img" aria-label="Distribution of review outcomes"></div>
+          <div class="cards" id="cards"></div>
+        </div>
+
+        <div class="review">
+          <aside class="queue" aria-label="Prescription queue">
+            <div class="queue-tools">
+              <label class="sr-only" for="search">Search prescriptions</label>
+              <input class="input" id="search" type="search" placeholder="Search patient, UHID, drug, ward…">
+              <div class="chips" id="filters" role="group" aria-label="Filter queue"></div>
+            </div>
+            <ul class="rx-list" id="rxList"></ul>
+          </aside>
+          <section class="detail" id="detail" aria-live="polite"></section>
+        </div>
+      </section>
+
+      <section class="panel" id="p-abg" role="tabpanel" aria-labelledby="t-abg" hidden>
+        <h2 style="margin:0 0 4px;font-size:18px">Cumulative antibiogram</h2>
+        <p class="muted" style="margin:0">% susceptible, first isolate per patient. Drugs below the <span id="targetPct"></span>% target are flagged as poor empiric choices.</p>
+        <div class="legend">
+          <span><span class="dot s-hi" style="vertical-align:middle"></span> ≥ 80% susceptible</span>
+          <span><span class="dot s-mid" style="vertical-align:middle"></span> 50–79%</span>
+          <span><span class="dot s-lo" style="vertical-align:middle"></span> &lt; 50%</span>
+          <span>— not tested / not applicable</span>
+        </div>
+        <div class="table-wrap"><table id="abgTable"></table></div>
+      </section>
+
+      <section class="panel" id="p-guide" role="tabpanel" aria-labelledby="t-guide" hidden>
+        <h2 style="margin:0 0 4px;font-size:18px">Hospital empiric treatment guidelines</h2>
+        <p class="muted" style="margin:0 0 14px">The rules every prescription is checked against: drug choice, dose, duration and culture requirement.</p>
+        <div class="g-grid" id="guideGrid"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<dialog id="rxDialog" aria-labelledby="dlgTitle">
+  <form id="rxForm" novalidate>
+    <div class="dlg-head">
+      <h2 id="dlgTitle">New antibiotic prescription</h2>
+      <button class="btn btn-sm" type="button" id="closeDlg" aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-form">
+        <fieldset>
+          <legend>Patient</legend>
+          <div class="fgrid">
+            <div class="field span-2"><label for="f-name">Patient name</label><input class="input" id="f-name" name="patientName" required></div>
+            <div class="field"><label for="f-uhid">UHID</label><input class="input" id="f-uhid" name="uhid" placeholder="UH-000000"></div>
+            <div class="field"><label for="f-age">Age (years)</label><input class="input" id="f-age" name="age" type="number" min="0" max="120" required></div>
+            <div class="field"><label for="f-sex">Sex</label><select class="input" id="f-sex" name="sex"><option value="M">Male</option><option value="F">Female</option></select></div>
+            <div class="field"><label for="f-wt">Weight (kg)</label><input class="input" id="f-wt" name="weightKg" type="number" min="1" max="300" required></div>
+            <div class="field"><label for="f-crcl">CrCl (mL/min)</label><input class="input" id="f-crcl" name="crCl" type="number" min="0" max="200" placeholder="Unknown"></div>
+            <div class="field span-2"><label for="f-ward">Ward</label><input class="input" id="f-ward" name="ward" placeholder="e.g. Medicine – Ward 4"></div>
+            <div class="field span-3">
+              <span style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Allergies</span>
+              <div class="chips" style="gap:14px">
+                <label class="check"><input type="checkbox" name="allergy" value="penicillin"> Penicillin</label>
+                <label class="check"><input type="checkbox" name="allergy" value="cephalosporin"> Cephalosporin</label>
+                <label class="check"><input type="checkbox" name="allergy" value="carbapenem"> Carbapenem</label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Prescription</legend>
+          <div class="fgrid">
+            <div class="field span-3"><label for="f-ind">Indication</label><select class="input" id="f-ind" name="indication"></select></div>
+            <div class="field span-2"><label for="f-drug">Antibiotic</label><select class="input" id="f-drug" name="drug"></select></div>
+            <div class="field"><label for="f-route">Route</label><select class="input" id="f-route" name="route"><option>IV</option><option>PO</option><option>IM</option></select></div>
+            <div class="field"><label for="f-dose">Dose per administration (mg)</label><input class="input" id="f-dose" name="dose" type="number" min="1" required></div>
+            <div class="field"><label for="f-freq">Frequency</label><select class="input" id="f-freq" name="frequency"><option value="1">OD</option><option value="2">BD (q12h)</option><option value="3">TDS (q8h)</option><option value="4">QID (q6h)</option></select></div>
+            <div class="field"><label for="f-dur">Duration (days)</label><input class="input" id="f-dur" name="durationDays" type="number" min="1" max="60" required></div>
+            <div class="field span-2"><label for="f-presc">Prescriber</label><input class="input" id="f-presc" name="prescriber" placeholder="Dr. …"></div>
+            <div class="field"><label for="f-org">Culture result</label><select class="input" id="f-org" name="organism"><option value="">Pending / none</option></select></div>
+            <div class="field span-3"><label class="check"><input type="checkbox" name="cultureSent" id="f-cult"> Culture sent before first dose</label></div>
+          </div>
+        </fieldset>
+        <p id="formErr" class="err" role="alert"></p>
+      </div>
+      <aside class="dlg-live" aria-live="polite" aria-label="Live stewardship review">
+        <div class="box" id="liveReview"></div>
+      </aside>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" type="button" id="cancelDlg">Cancel</button>
+      <button class="btn btn-primary" type="submit">Submit for review</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Hospital data: formulary, antibiogram, guidelines ---------- */
+  var PERIOD = 'Jan – Jun 2026';
+  var TARGET = 80;
+
+  var DRUGS = {
+    amoxicillin: { name: 'Amoxicillin', cls: 'Penicillin', aware: 'Access', family: 'penicillin', basis: 'mg', min: 1500, max: 3000 },
+    amox_clav: { name: 'Amoxicillin-clavulanate', cls: 'Penicillin + BLI', aware: 'Access', family: 'penicillin', basis: 'mg', min: 1875, max: 3600, renal: { below: 30, adj: { dose: 1200, freq: 2 }, note: 'CrCl < 30: reduce to 1.2 g q12h.' } },
+    cefazolin: { name: 'Cefazolin', cls: '1st-gen cephalosporin', aware: 'Access', family: 'cephalosporin', basis: 'mg', min: 1000, max: 6000, renal: { below: 35, adj: { dose: 2000, freq: 2 }, note: 'CrCl < 35: extend to q12h.' } },
+    ceftriaxone: { name: 'Ceftriaxone', cls: '3rd-gen cephalosporin', aware: 'Watch', family: 'cephalosporin', basis: 'mg', min: 1000, max: 4000 },
+    azithromycin: { name: 'Azithromycin', cls: 'Macrolide', aware: 'Watch', family: 'other', basis: 'mg', min: 250, max: 1000 },
+    ciprofloxacin: { name: 'Ciprofloxacin', cls: 'Fluoroquinolone', aware: 'Watch', family: 'other', basis: 'mg', min: 500, max: 1500, renal: { below: 30, adj: { dose: 500, freq: 1 }, note: 'CrCl < 30: 500 mg once daily.' } },
+    nitrofurantoin: { name: 'Nitrofurantoin', cls: 'Nitrofuran', aware: 'Access', family: 'other', basis: 'mg', min: 200, max: 400, renal: { below: 45, contra: true, note: 'Avoid when CrCl < 45 mL/min — inadequate urinary levels, toxicity risk.' } },
+    fosfomycin: { name: 'Fosfomycin', cls: 'Phosphonic acid', aware: 'Watch', family: 'other', basis: 'mg', min: 3000, max: 3000 },
+    pip_taz: { name: 'Piperacillin-tazobactam', cls: 'Penicillin + BLI', aware: 'Watch', family: 'penicillin', basis: 'mg', min: 9000, max: 18000, renal: { below: 40, adj: { dose: 4500, freq: 3 }, note: 'CrCl < 40: 4.5 g q8h.' } },
+    meropenem: { name: 'Meropenem', cls: 'Carbapenem', aware: 'Watch', family: 'carbapenem', basis: 'mg', min: 1500, max: 6000, renal: { below: 50, adj: { dose: 1000, freq: 2 }, note: 'CrCl 26–50: 1 g q12h.' } },
+    amikacin: { name: 'Amikacin', cls: 'Aminoglycoside', aware: 'Access', family: 'other', basis: 'mgPerKg', min: 15, max: 20, renal: { below: 30, contra: true, note: 'Avoid aminoglycosides when CrCl < 30 mL/min unless no alternative; requires TDM.' } },
+    caz_avi: { name: 'Ceftazidime-avibactam', cls: 'Cephalosporin + BLI', aware: 'Reserve', family: 'cephalosporin', basis: 'mg', min: 7500, max: 7500, renal: { below: 50, adj: { dose: 1250, freq: 3 }, note: 'CrCl 31–50: 1.25 g q8h.' } },
+    doxycycline: { name: 'Doxycycline', cls: 'Tetracycline', aware: 'Access', family: 'other', basis: 'mg', min: 200, max: 200 },
+    cloxacillin: { name: 'Cloxacillin', cls: 'Anti-staphylococcal penicillin', aware: 'Access', family: 'penicillin', basis: 'mg', min: 2000, max: 12000 },
+    metronidazole: { name: 'Metronidazole', cls: 'Nitroimidazole', aware: 'Access', family: 'other', basis: 'mg', min: 1200, max: 4000 },
+    vancomycin: { name: 'Vancomycin', cls: 'Glycopeptide', aware: 'Watch', family: 'other', basis: 'mgPerKg', min: 25, max: 45 },
+    linezolid: { name: 'Linezolid', cls: 'Oxazolidinone', aware: 'Reserve', family: 'other', basis: 'mg', min: 1200, max: 1200 }
+  };
+  Object.keys(DRUGS).forEach(function (k) { DRUGS[k].key = k; });
+
+  var ORGANISMS = ['E. coli', 'K. pneumoniae', 'P. aeruginosa', 'A. baumannii', 'S. aureus', 'S. pyogenes', 'S. pneumoniae', 'S. Typhi'];
+  var ABG_DRUGS = ['amox_clav', 'ceftriaxone', 'ciprofloxacin', 'nitrofurantoin', 'fosfomycin', 'pip_taz', 'meropenem', 'amikacin', 'caz_avi', 'cefazolin', 'cloxacillin', 'doxycycline', 'azithromycin', 'vancomycin', 'linezolid'];
+  var ISOLATES = { 'E. coli': 1284, 'K. pneumoniae': 862, 'P. aeruginosa': 411, 'A. baumannii': 296, 'S. aureus': 538, 'S. pyogenes': 74, 'S. pneumoniae': 88, 'S. Typhi': 132 };
+  var ABG = {
+    'E. coli': { amox_clav: 38, ceftriaxone: 27, ciprofloxacin: 22, nitrofurantoin: 89, fosfomycin: 94, pip_taz: 61, meropenem: 84, amikacin: 86, caz_avi: 92 },
+    'K. pneumoniae': { amox_clav: 20, ceftriaxone: 18, ciprofloxacin: 19, nitrofurantoin: 45, fosfomycin: 70, pip_taz: 38, meropenem: 52, amikacin: 58, caz_avi: 81 },
+    'P. aeruginosa': { ciprofloxacin: 58, pip_taz: 72, meropenem: 64, amikacin: 76, caz_avi: 85 },
+    'A. baumannii': { ciprofloxacin: 10, pip_taz: 12, meropenem: 14, amikacin: 21, caz_avi: 0 },
+    'S. aureus': { amox_clav: 58, cefazolin: 58, cloxacillin: 58, ciprofloxacin: 30, doxycycline: 82, vancomycin: 100, linezolid: 100 },
+    'S. pyogenes': { amox_clav: 100, cefazolin: 100, cloxacillin: 100, doxycycline: 75, azithromycin: 68 },
+    'S. pneumoniae': { amox_clav: 94, ceftriaxone: 95, azithromycin: 52, doxycycline: 70 },
+    'S. Typhi': { ceftriaxone: 97, azithromycin: 93, ciprofloxacin: 6 }
+  };
+
+  var GUIDELINES = {
+    cap_ward: { name: 'Community-acquired pneumonia (ward)', likely: [['S. pneumoniae', 1]],
+      options: [
+        { drug: 'amox_clav', dose: 1200, freq: 3, route: 'IV', days: 5, firstLine: true },
+        { drug: 'ceftriaxone', dose: 2000, freq: 1, route: 'IV', days: 5 },
+        { drug: 'doxycycline', dose: 100, freq: 2, route: 'PO', days: 5, note: 'Penicillin allergy' },
+        { drug: 'azithromycin', dose: 500, freq: 1, route: 'PO', days: 3, addOn: true, note: 'Add to beta-lactam for atypical cover' }
+      ], dur: [5, 7], culture: { required: true, specimen: 'blood culture and sputum' },
+      notes: 'Review at 48–72 h; switch IV to oral once afebrile and haemodynamically stable.' },
+    uti_uncomplicated: { name: 'Uncomplicated cystitis', likely: [['E. coli', .85], ['K. pneumoniae', .15]],
+      options: [
+        { drug: 'nitrofurantoin', dose: 100, freq: 2, route: 'PO', days: 5, firstLine: true },
+        { drug: 'fosfomycin', dose: 3000, freq: 1, route: 'PO', days: 1, note: 'Single dose' }
+      ], dur: [3, 5], culture: { required: true, specimen: 'urine culture' },
+      notes: 'Fluoroquinolones and 3rd-gen cephalosporins are not recommended due to high local ESBL rates.' },
+    uti_complicated: { name: 'Complicated UTI / pyelonephritis', likely: [['E. coli', .8], ['K. pneumoniae', .2]],
+      options: [
+        { drug: 'amikacin', dose: 15, freq: 1, route: 'IV', days: 7, firstLine: true },
+        { drug: 'meropenem', dose: 1000, freq: 3, route: 'IV', days: 7, note: 'Septic shock or ESBL with AKI' },
+        { drug: 'pip_taz', dose: 4500, freq: 4, route: 'IV', days: 7 }
+      ], dur: [7, 10], culture: { required: true, specimen: 'urine and blood cultures' },
+      notes: 'De-escalate to an oral agent per culture result once afebrile for 48 h.' },
+    sepsis_hai: { name: 'Hospital-acquired sepsis (ICU)', likely: [['E. coli', .35], ['K. pneumoniae', .35], ['P. aeruginosa', .2], ['A. baumannii', .1]],
+      options: [
+        { drug: 'meropenem', dose: 1000, freq: 3, route: 'IV', days: 7, firstLine: true },
+        { drug: 'pip_taz', dose: 4500, freq: 4, route: 'IV', days: 7 },
+        { drug: 'caz_avi', dose: 2500, freq: 3, route: 'IV', days: 7, approval: true, note: 'Only for confirmed CRE; ID approval' }
+      ], dur: [7, 14], culture: { required: true, specimen: 'two sets of blood cultures plus source cultures' },
+      notes: 'Cultures before first dose. Reassess at 48–72 h and de-escalate on susceptibility report.' },
+    surgical_prophylaxis: { name: 'Surgical prophylaxis (clean / clean-contaminated)', skipCoverage: true, likely: [['S. aureus', 1]],
+      options: [{ drug: 'cefazolin', dose: 2000, freq: 1, route: 'IV', days: 1, firstLine: true, note: 'Within 60 min before incision' }],
+      dur: [1, 1], culture: { required: false, specimen: 'none' },
+      notes: 'Single pre-incision dose; extending beyond 24 h does not reduce SSI and drives resistance.' },
+    cellulitis: { name: 'Cellulitis (non-purulent)', likely: [['S. pyogenes', .6], ['S. aureus', .4]],
+      options: [
+        { drug: 'cefazolin', dose: 2000, freq: 3, route: 'IV', days: 5, firstLine: true },
+        { drug: 'cloxacillin', dose: 2000, freq: 4, route: 'IV', days: 5 },
+        { drug: 'doxycycline', dose: 100, freq: 2, route: 'PO', days: 5, note: 'Suspected MRSA / severe beta-lactam allergy' }
+      ], dur: [5, 7], culture: { required: false, specimen: 'pus swab if purulent' },
+      notes: 'Mark the margin; 5 days is sufficient if improving.' },
+    enteric_fever: { name: 'Enteric fever', likely: [['S. Typhi', 1]],
+      options: [
+        { drug: 'ceftriaxone', dose: 2000, freq: 1, route: 'IV', days: 10, firstLine: true },
+        { drug: 'azithromycin', dose: 1000, freq: 1, route: 'PO', days: 7, note: 'Uncomplicated, oral' }
+      ], dur: [7, 14], culture: { required: true, specimen: 'blood culture' },
+      notes: 'Fluoroquinolones are not recommended — local S. Typhi ciprofloxacin susceptibility is very low.' },
+    urti: { name: 'Viral upper respiratory tract infection', noAbx: true, likely: [], options: [], dur: [0, 0], culture: { required: false, specimen: 'none' },
+      notes: 'Antibiotics are not indicated. Symptomatic care; review if not improving in 7–10 days.' },
+    acute_diarrhoea: { name: 'Acute watery diarrhoea', noAbx: true, likely: [], options: [], dur: [0, 0], culture: { required: false, specimen: 'none' },
+      notes: 'ORS and zinc. Antibiotics only for dysentery, cholera or suspected sepsis.' }
+  };
+  Object.keys(GUIDELINES).forEach(function (k) { GUIDELINES[k].key = k; });
+
+  function seed(id, name, uhid, age, sex, wt, ward, presc, ind, drug, dose, freq, route, days, cult, crcl, allergies, org, time) {
+    return { id: id, patientName: name, uhid: uhid, age: age, sex: sex, weightKg: wt, ward: ward, prescriber: presc, indication: ind, drug: drug, dose: dose, frequency: freq, route: route, durationDays: days, cultureSent: cult, crCl: crcl, allergies: allergies, organism: org, prescribedAt: '2026-10-08T' + time };
+  }
+  var prescriptions = [
+    seed('RX-24101', 'Ramesh Kumar', 'UH-882031', 58, 'M', 68, 'Medicine – Ward 4', 'Dr. A. Rao', 'cap_ward', 'ceftriaxone', 1000, 2, 'IV', 10, false, 72, [], null, '08:12'),
+    seed('RX-24102', 'Sunita Devi', 'UH-882119', 34, 'F', 55, 'Gynaecology OPD', 'Dr. K. Menon', 'uti_uncomplicated', 'ciprofloxacin', 500, 2, 'PO', 7, false, 98, [], null, '08:40'),
+    seed('RX-24103', 'Arjun Mehta', 'UH-882204', 26, 'M', 70, 'General OPD', 'Dr. S. Bhat', 'urti', 'azithromycin', 500, 1, 'PO', 3, false, null, [], null, '09:02'),
+    seed('RX-24104', 'Lakshmi Narayan', 'UH-881456', 67, 'F', 52, 'MICU', 'Dr. P. Kulkarni', 'sepsis_hai', 'meropenem', 1000, 3, 'IV', 7, true, 32, [], null, '09:15'),
+    seed('RX-24105', 'Mohammed Irfan', 'UH-882310', 45, 'M', 80, 'Surgery – OT 2', 'Dr. R. Iyer', 'surgical_prophylaxis', 'ceftriaxone', 1000, 1, 'IV', 5, false, 90, [], null, '09:30'),
+    seed('RX-24106', 'Priya Sharma', 'UH-882377', 29, 'F', 60, 'Medicine – Ward 2', 'Dr. A. Rao', 'enteric_fever', 'ceftriaxone', 2000, 1, 'IV', 14, true, 105, [], 'S. Typhi', '09:48'),
+    seed('RX-24107', 'Gopal Rao', 'UH-880912', 72, 'M', 64, 'Medicine – Ward 4', 'Dr. N. Pillai', 'uti_complicated', 'nitrofurantoin', 100, 2, 'PO', 7, true, 24, [], 'E. coli', '10:05'),
+    seed('RX-24108', 'Anita Joseph', 'UH-882455', 41, 'F', 58, 'Medicine – Ward 2', 'Dr. S. Bhat', 'cellulitis', 'cloxacillin', 500, 4, 'PO', 7, false, 88, ['penicillin'], null, '10:20'),
+    seed('RX-24109', 'Vikram Singh', 'UH-881733', 52, 'M', 75, 'SICU', 'Dr. T. Das', 'sepsis_hai', 'caz_avi', 2500, 3, 'IV', 10, false, 80, [], null, '10:42'),
+    seed('RX-24110', 'Fatima Begum', 'UH-882501', 63, 'F', 50, 'Medicine – Ward 4', 'Dr. A. Rao', 'cap_ward', 'amox_clav', 1200, 3, 'IV', 5, true, 58, [], null, '11:00'),
+    seed('RX-24111', 'Suresh Patil', 'UH-882540', 38, 'M', 70, 'Surgery – Ward 6', 'Dr. R. Iyer', 'cellulitis', 'cefazolin', 500, 3, 'IV', 5, false, 95, [], null, '11:18'),
+    seed('RX-24112', 'Kavita Iyer', 'UH-882588', 55, 'F', 62, 'Medicine – Ward 2', 'Dr. N. Pillai', 'enteric_fever', 'ciprofloxacin', 500, 2, 'PO', 7, false, 82, [], null, '11:35'),
+    seed('RX-24113', 'Deepak Verma', 'UH-881210', 49, 'M', 82, 'MICU', 'Dr. P. Kulkarni', 'sepsis_hai', 'pip_taz', 4500, 4, 'IV', 7, true, 76, [], 'K. pneumoniae', '11:50'),
+    seed('RX-24114', 'Meena Kumari', 'UH-882612', 31, 'F', 54, 'Obstetrics', 'Dr. K. Menon', 'uti_uncomplicated', 'nitrofurantoin', 100, 2, 'PO', 5, true, 110, [], null, '12:04'),
+    seed('RX-24115', 'Rahul Nair', 'UH-882650', 22, 'M', 65, 'Emergency', 'Dr. T. Das', 'acute_diarrhoea', 'metronidazole', 400, 3, 'PO', 5, false, null, [], null, '12:20'),
+    seed('RX-24116', 'Harish Gupta', 'UH-881998', 60, 'M', 78, 'Urology', 'Dr. R. Iyer', 'uti_complicated', 'amikacin', 1200, 1, 'IV', 7, true, 65, [], null, '12:41')
+  ];
+
+  /* ---------- Review engine ---------- */
+  var RANK = { critical: 3, major: 2, minor: 1 };
+
+  function coverageFor(drugKey, g, organism) {
+    if (organism) { var v = ABG[organism] && ABG[organism][drugKey]; return v == null ? null : v; }
+    var w = 0, tw = 0;
+    g.likely.forEach(function (p) { var s = ABG[p[0]] && ABG[p[0]][drugKey]; if (s != null) { w += s * p[1]; tw += p[1]; } });
+    return tw ? Math.round(w / tw) : null;
+  }
+  function allergyConflict(d, allergies) {
+    var a = allergies.map(function (x) { return x.toLowerCase(); });
+    if (d.family !== 'other' && a.indexOf(d.family) !== -1) return d.family;
+    return null;
+  }
+  function renalRule(d, crCl) { return d.renal && crCl != null && crCl < d.renal.below ? d.renal : null; }
+  function fmtDose(mg) { return mg >= 1000 ? +(mg / 1000).toFixed(2) + ' g' : mg + ' mg'; }
+  function fmtFreq(f) { return { 1: 'OD', 2: 'BD (q12h)', 3: 'TDS (q8h)', 4: 'QID (q6h)' }[f] || f + '×/day'; }
+  function fmtRegimen(r) {
+    if (!r.drug) return 'No antibiotic';
+    var n = DRUGS[r.drug] ? DRUGS[r.drug].name : r.drug;
+    return n + ' ' + fmtDose(r.dose) + ' ' + r.route + ' ' + fmtFreq(r.frequency) + ' × ' + (r.durationDays === 1 ? 'single day' : r.durationDays + ' days');
+  }
+  function optDoseMg(o, d, wt) { return d.basis === 'mgPerKg' ? Math.round((o.dose * wt) / 50) * 50 : o.dose; }
+
+  function review(rx) {
+    var g = GUIDELINES[rx.indication], d = DRUGS[rx.drug], findings = [];
+    function add(cat, sev, title, detail) { findings.push({ category: cat, severity: sev, title: title, detail: detail }); }
+
+    if (!g || !d) {
+      add('drug', 'major', 'Unable to review automatically', !g ? 'Indication is not in the hospital guideline.' : 'Drug is not in the formulary.');
+      return { rx: rx, g: g, findings: findings, coverage: null, optCov: [], suggestion: null, top: 'major' };
+    }
+    if (g.noAbx) {
+      add('drug', 'critical', 'Antibiotic not indicated', g.name + ': ' + g.notes);
+      return { rx: rx, g: g, findings: findings, coverage: null, optCov: [], top: 'critical',
+        suggestion: { kind: 'stop', drug: null, dose: 0, frequency: 0, route: rx.route, durationDays: 0, coverage: null, approval: false,
+          rationale: ['Hospital guideline does not recommend antibiotics for this indication.', g.notes] } };
+    }
+
+    var optCov = g.options.map(function (o) {
+      var od = DRUGS[o.drug], al = allergyConflict(od, rx.allergies), rn = renalRule(od, rx.crCl);
+      return { drug: o.drug, coverage: g.skipCoverage ? null : coverageFor(o.drug, g, rx.organism), firstLine: !!o.firstLine,
+        excluded: al ? al + ' allergy' : (rn && rn.contra) ? 'CrCl ' + rx.crCl : o.addOn ? 'add-on only' : null };
+    });
+    var coverage = g.skipCoverage ? null : coverageFor(rx.drug, g, rx.organism);
+    var best = Math.max.apply(null, optCov.filter(function (o) { return !o.excluded; }).map(function (o) { return o.coverage || 0; }).concat([0]));
+    var pOpt = g.options.filter(function (o) { return o.drug === rx.drug; })[0];
+
+    var al = allergyConflict(d, rx.allergies);
+    if (al) add('drug', 'critical', 'Documented ' + al + ' allergy', d.name + ' is a ' + d.cls.toLowerCase() + ' and is contraindicated for this patient.');
+    var rn = renalRule(d, rx.crCl);
+    if (rn && rn.contra) add('drug', 'critical', 'Contraindicated at CrCl ' + rx.crCl + ' mL/min', rn.note);
+
+    if (!pOpt) {
+      var fl = g.options.filter(function (o) { return o.firstLine; })[0];
+      var broader = fl && DRUGS[fl.drug].aware === 'Access' && d.aware !== 'Access';
+      add('drug', 'major', 'Not in hospital guideline for this indication', d.name + ' is not listed for ' + g.name.toLowerCase() + '.' +
+        (broader ? ' It is a WHO ' + d.aware + ' antibiotic where an Access option (' + DRUGS[fl.drug].name + ') is first-line.' : ''));
+    } else if (pOpt.addOn) {
+      add('drug', 'major', 'Monotherapy not recommended', (d.name + ' is only an add-on for ' + g.name.toLowerCase() + '. ' + (pOpt.note || '')).trim());
+    }
+
+    if (d.aware === 'Reserve') {
+      var confirmed = rx.cultureSent && rx.organism;
+      add('drug', confirmed ? 'major' : 'critical', 'Reserve antibiotic — ID approval required',
+        confirmed ? 'Started for ' + rx.organism + '. Confirm susceptibility report and Infectious Diseases sign-off.' : 'Started empirically without a culture-confirmed resistant organism.');
+    }
+
+    if (coverage != null && coverage < TARGET) {
+      var tgt = rx.organism ? rx.organism + ' isolates' : 'likely pathogens (weighted)';
+      if (best - coverage >= 10) add('drug', coverage < 50 ? 'critical' : 'major', 'Poor local susceptibility (' + coverage + '%)', 'Only ' + coverage + '% of ' + tgt + ' are susceptible locally; a guideline option covers ' + best + '%.');
+      else add('drug', 'minor', 'Limited local coverage (' + coverage + '%)', 'This is the best available empiric option, but de-escalate as soon as the susceptibility report is back.');
+    }
+
+    var dailyMg = rx.dose * rx.frequency;
+    var dailyBasis = d.basis === 'mgPerKg' ? dailyMg / rx.weightKg : dailyMg;
+    var fmt = function (v) { return d.basis === 'mgPerKg' ? v.toFixed(1) + ' mg/kg/day' : fmtDose(v) + '/day'; };
+    var expected = pOpt && !pOpt.addOn ? pOpt.dose * pOpt.freq : null;
+    var minDaily = expected ? expected * 0.75 : d.min;
+    if (dailyBasis < minDaily) add('dose', 'major', 'Under-dosed', fmt(dailyBasis) + ' prescribed; guideline dose is ' + fmt(expected || d.min) + '. Sub-therapeutic exposure selects for resistance.');
+    else if (dailyBasis > d.max) add('dose', 'major', 'Exceeds maximum daily dose', fmt(dailyBasis) + ' prescribed; maximum is ' + fmt(d.max) + '.');
+
+    if (rn && !rn.contra && rn.adj && dailyMg > rn.adj.dose * rn.adj.freq) {
+      add('dose', 'major', 'Not adjusted for renal function (CrCl ' + rx.crCl + ')', rn.note + ' Prescribed ' + fmtDose(dailyMg) + '/day.');
+    }
+
+    var aMin = Math.min(g.dur[0], pOpt ? pOpt.days : Infinity), aMax = Math.max(g.dur[1], pOpt ? pOpt.days : 0);
+    if (rx.durationDays > aMax) {
+      add('duration', 'major', 'Duration longer than recommended', rx.durationDays + ' days prescribed; guideline is ' +
+        (aMin === aMax ? aMax + ' day' + (aMax > 1 ? 's' : '') : aMin + '–' + aMax + ' days') + '. ' +
+        (g.key === 'surgical_prophylaxis' ? g.notes : 'Set a stop date or review date.'));
+    } else if (rx.durationDays < aMin) {
+      add('duration', 'minor', 'Duration shorter than recommended', rx.durationDays + ' days prescribed; guideline minimum is ' + aMin + ' days.');
+    }
+
+    if (g.culture.required && !rx.cultureSent) add('culture', 'major', 'No culture sent', 'Send ' + g.culture.specimen + ' before the first dose so therapy can be de-escalated.');
+    else if (d.aware === 'Reserve' && !rx.cultureSent) add('culture', 'critical', 'No culture sent', 'Reserve antibiotics require a culture before initiation.');
+
+    var top = findings.reduce(function (t, f) { return !t || RANK[f.severity] > RANK[t] ? f.severity : t; }, null);
+    return { rx: rx, g: g, findings: findings, coverage: coverage, optCov: optCov, top: top, suggestion: buildSuggestion(rx, g, d, findings, optCov) };
+  }
+
+  function buildSuggestion(rx, g, d, findings, optCov) {
+    if (!findings.length) return null;
+    var needsSwitch = findings.some(function (f) { return f.category === 'drug' && f.severity !== 'minor'; });
+    var hasDose = findings.some(function (f) { return f.category === 'dose'; });
+    var hasDur = findings.some(function (f) { return f.category === 'duration'; });
+    var cultNote = g.culture.required && !rx.cultureSent ? ['Send ' + g.culture.specimen + ' before the first dose.'] : [];
+    var option;
+
+    if (needsSwitch) {
+      var ranked = g.options.map(function (o, i) { return { o: o, c: optCov[i] }; })
+        .filter(function (x) { return !x.c.excluded; })
+        .sort(function (a, b) {
+          var ma = g.skipCoverage || (a.c.coverage || 0) >= TARGET ? 1 : 0, mb = g.skipCoverage || (b.c.coverage || 0) >= TARGET ? 1 : 0;
+          if (ma !== mb) return mb - ma;
+          if (!ma && (a.c.coverage || 0) !== (b.c.coverage || 0)) return (b.c.coverage || 0) - (a.c.coverage || 0);
+          var pa = a.o.approval ? 1 : 0, pb = b.o.approval ? 1 : 0;
+          if (pa !== pb && !rx.organism) return pa - pb;
+          if (!!a.o.firstLine !== !!b.o.firstLine) return a.o.firstLine ? -1 : 1;
+          return (b.c.coverage || 0) - (a.c.coverage || 0);
+        });
+      option = ranked[0] && ranked[0].o;
+      if (!option) return { kind: 'switch', drug: null, dose: 0, frequency: 0, route: rx.route, durationDays: 0, coverage: null, approval: true,
+        rationale: ['No guideline option is safe for this patient. Refer to the Infectious Diseases team.'].concat(cultNote) };
+    } else {
+      option = g.options.filter(function (o) { return o.drug === rx.drug; })[0];
+    }
+
+    var t = option ? DRUGS[option.drug] : d, rationale = [];
+    var dose = rx.dose, freq = rx.frequency, route = rx.route;
+    var days = Math.min(Math.max(rx.durationDays, g.dur[0]), g.dur[1]);
+    if (option && (needsSwitch || hasDose)) { dose = optDoseMg(option, t, rx.weightKg); freq = option.freq; route = option.route; }
+    if (option && (needsSwitch || hasDur)) days = option.days;
+
+    var rn = renalRule(t, rx.crCl);
+    if (rn && rn.adj && dose * freq > rn.adj.dose * rn.adj.freq) {
+      dose = t.basis === 'mgPerKg' ? Math.round((rn.adj.dose * rx.weightKg) / 50) * 50 : rn.adj.dose;
+      freq = rn.adj.freq;
+      rationale.push('Renally adjusted: ' + rn.note);
+    }
+    var cov = g.skipCoverage ? null : coverageFor(t.key, g, rx.organism);
+    if (needsSwitch && option) rationale.unshift(option.firstLine ? 'First-line in hospital guideline for ' + g.name.toLowerCase() + '.' : 'Guideline alternative' + (option.note ? ' — ' + option.note.toLowerCase() : '') + '.');
+    else rationale.unshift('Keep ' + t.name + '; correct ' + (hasDose ? 'dose' : 'regimen') + ' to guideline.');
+    if (cov != null) rationale.push('Local susceptibility ' + cov + '% ' + (rx.organism ? 'for ' + rx.organism : 'for likely pathogens (weighted antibiogram)') + '.');
+    rationale.push('WHO AWaRe: ' + t.aware + ' group.');
+    if (rx.allergies.indexOf('penicillin') !== -1 && t.family === 'cephalosporin') rationale.push('Penicillin allergy: cephalosporin cross-reactivity is low — confirm the reaction was not anaphylaxis.');
+    if (option && option.approval) rationale.push('Requires Infectious Diseases approval before dispensing.');
+
+    return { kind: needsSwitch ? 'switch' : 'adjust', drug: t.key, dose: dose, frequency: freq, route: route, durationDays: days, coverage: cov,
+      approval: !!(option && option.approval), rationale: rationale.concat(cultNote) };
+  }
+
+  /* ---------- State ---------- */
+  var decisions = {};
+  var state = { selected: prescriptions[0].id, filter: 'all', query: '' };
+  var nextId = 24117;
+
+  /* ---------- Helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var SEV_LABEL = { critical: 'Critical', major: 'Major', minor: 'Minor' };
+  var CAT_LABEL = { drug: 'Drug choice', dose: 'Dose', duration: 'Duration', culture: 'Culture' };
+  var CAT_ICON = { drug: 'Rx', dose: 'mg', duration: 'd', culture: 'Cx' };
+  function sevColor(s) { return s === 'critical' ? 'var(--crit)' : s === 'major' ? 'var(--major)' : s === 'minor' ? 'var(--minor)' : 'var(--ok)'; }
+  function covClass(v) { return v >= 80 ? 's-hi' : v >= 50 ? 's-mid' : 's-lo'; }
+  function covColor(v) { return v >= 80 ? 'var(--ok)' : v >= 50 ? 'var(--major)' : 'var(--crit)'; }
+  function timeOf(iso) { var d = new Date(iso); return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2400); }
+  function sevBadge(s) { return s ? '<span class="badge b-' + s + '">' + SEV_LABEL[s] + '</span>' : '<span class="badge b-ok">Appropriate</span>'; }
+
+  /* ---------- Rendering: summary ---------- */
+  function renderSummary(reviews) {
+    var counts = { critical: 0, major: 0, minor: 0, ok: 0 }, decided = 0;
+    reviews.forEach(function (r) { counts[r.top || 'ok']++; if (decisions[r.rx.id]) decided++; });
+    var total = reviews.length, flagged = total - counts.ok;
+    $('totalCount').textContent = total;
+    $('flagRate').textContent = flagged + ' flagged (' + Math.round(flagged / total * 100) + '%) · ' + decided + ' decided · ' + (total - decided) + ' awaiting pharmacist';
+    var segs = [['critical', 'Critical', 'var(--crit)'], ['major', 'Major', 'var(--major)'], ['minor', 'Minor', 'var(--minor)'], ['ok', 'Appropriate', 'var(--ok)']];
+    $('dist').innerHTML = segs.map(function (s) { return counts[s[0]] ? '<span style="width:' + (counts[s[0]] / total * 100) + '%;background:' + s[2] + '"></span>' : ''; }).join('');
+    $('cards').innerHTML = segs.map(function (s) {
+      return '<div class="card"><div class="k"><span class="dot" style="background:' + s[2] + '"></span>' + s[1] + '</div><div class="v">' +
+        Math.round(counts[s[0]] / total * 100) + '% · ' + counts[s[0]] + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------- Rendering: queue ---------- */
+  var FILTERS = [['all', 'All'], ['flagged', 'Flagged'], ['critical', 'Critical'], ['pending', 'Pending'], ['decided', 'Decided']];
+  function renderFilters() {
+    $('filters').innerHTML = FILTERS.map(function (f) { return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (state.filter === f[0]) + '">' + f[1] + '</button>'; }).join('');
+  }
+  function visible(reviews) {
+    var q = state.query.toLowerCase();
+    return reviews.filter(function (r) {
+      var rx = r.rx, dec = decisions[rx.id];
+      if (state.filter === 'flagged' && !r.top) return false;
+      if (state.filter === 'critical' && r.top !== 'critical') return false;
+      if (state.filter === 'pending' && dec) return false;
+      if (state.filter === 'decided' && !dec) return false;
+      if (!q) return true;
+      return [rx.patientName, rx.uhid, rx.ward, rx.id, DRUGS[rx.drug] ? DRUGS[rx.drug].name : rx.drug, rx.prescriber].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  function renderQueue(reviews) {
+    var list = visible(reviews);
+    if (!list.length) { $('rxList').innerHTML = '<li class="empty">No prescriptions match.</li>'; return; }
+    $('rxList').innerHTML = list.map(function (r) {
+      var rx = r.rx, dec = decisions[rx.id];
+      var status = dec ? '<span class="badge ' + (dec.action === 'rejected' ? 'b-critical' : dec.action === 'escalated' ? 'b-major' : 'b-ok') + '">' + esc(dec.label) + '</span>' : sevBadge(r.top);
+      return '<li><button type="button" class="rx-item" data-id="' + esc(rx.id) + '" aria-current="' + (state.selected === rx.id) + '">' +
+        '<span class="bar" style="background:' + sevColor(r.top) + '"></span><span class="body">' +
+        '<span class="row"><span class="name">' + esc(rx.patientName) + '</span>' + status + '</span>' +
+        '<span class="sub" style="display:block">' + esc(DRUGS[rx.drug] ? DRUGS[rx.drug].name : rx.drug) + ' · ' + esc(r.g ? r.g.name : rx.indication) + '</span>' +
+        '<span class="sub" style="display:block">' + esc(rx.ward) + ' · ' + timeOf(rx.prescribedAt) + ' · ' + r.findings.length + ' issue' + (r.findings.length === 1 ? '' : 's') + '</span>' +
+        '</span></button></li>';
+    }).join('');
+  }
+
+  /* ---------- Rendering: detail ---------- */
+  function findingsHtml(findings) {
+    if (!findings.length) return '<div class="decided">No issues found. Prescription matches the hospital guideline and local resistance data.</div>';
+    var sorted = findings.slice().sort(function (a, b) { return RANK[b.severity] - RANK[a.severity]; });
+    return '<ul class="findings">' + sorted.map(function (f) {
+      return '<li class="finding"><span class="ic b-' + f.severity + '" aria-hidden="true">' + CAT_ICON[f.category] + '</span><div>' +
+        '<div class="t">' + esc(f.title) + ' <span class="badge b-' + f.severity + '">' + SEV_LABEL[f.severity] + '</span><span class="badge b-neutral">' + CAT_LABEL[f.category] + '</span></div>' +
+        '<p>' + esc(f.detail) + '</p></div></li>';
+    }).join('') + '</ul>';
+  }
+  function coverageHtml(r) {
+    if (!r.optCov.length || r.g.skipCoverage) return '';
+    var rows = r.optCov.map(function (o) {
+      var v = o.coverage;
+      return '<div class="cov-row"><span>' + esc(DRUGS[o.drug].name) + (o.firstLine ? ' <span class="badge b-neutral">1st</span>' : '') + (o.excluded ? ' <span class="badge b-critical">' + esc(o.excluded) + '</span>' : '') + '</span>' +
+        '<span class="cov-track" role="img" aria-label="' + (v == null ? 'No data' : v + '% susceptible') + '">' + (v == null ? '' : '<span class="cov-fill" style="display:block;width:' + v + '%;background:' + covColor(v) + '"></span>') +
+        '<span class="cov-target" style="left:' + TARGET + '%"></span></span><span class="mono" style="text-align:right">' + (v == null ? '—' : v + '%') + '</span></div>';
+    });
+    if (r.coverage != null && !r.optCov.some(function (o) { return o.drug === r.rx.drug; })) {
+      rows.unshift('<div class="cov-row"><span><strong>' + esc(DRUGS[r.rx.drug].name) + '</strong> <span class="badge b-neutral">prescribed</span></span><span class="cov-track"><span class="cov-fill" style="display:block;width:' + r.coverage + '%;background:' + covColor(r.coverage) + '"></span><span class="cov-target" style="left:' + TARGET + '%"></span></span><span class="mono" style="text-align:right">' + r.coverage + '%</span></div>');
+    }
+    return '<div class="box"><h3>Local coverage of guideline options</h3><p class="muted" style="margin:0 0 6px;font-size:13px">' +
+      (r.rx.organism ? 'Susceptibility of ' + esc(r.rx.organism) + ' (culture result)' : 'Weighted by likely pathogens for this indication') + '. Line marks the ' + TARGET + '% target.</p>' + rows.join('') + '</div>';
+  }
+  function suggestionHtml(r, dec) {
+    var s = r.suggestion;
+    if (!s) return '';
+    var title = s.kind === 'stop' ? 'Suggested: stop antibiotic' : s.kind === 'switch' ? 'Suggested: switch to safer option' : 'Suggested: adjust regimen';
+    var actions = dec ? '' : '<label class="sr-only" for="note">Pharmacist note</label><textarea class="input" id="note" placeholder="Note to prescriber (optional)" style="margin-top:12px"></textarea>' +
+      '<div class="decision-actions">' +
+      '<button type="button" class="btn btn-primary" data-act="approved">Approve suggestion</button>' +
+      '<button type="button" class="btn" data-act="kept">Keep as prescribed</button>' +
+      '<button type="button" class="btn" data-act="escalated">Escalate to ID</button>' +
+      '<button type="button" class="btn btn-danger" data-act="rejected">Reject suggestion</button></div>';
+    return '<div class="box suggest"><h2>' + title + ' ' + (s.approval ? '<span class="badge b-major">ID approval</span>' : '') + '</h2>' +
+      '<div class="compare"><div class="from">' + esc(fmtRegimen(r.rx)) + '</div><span class="arrow" aria-hidden="true">→</span><div><strong>' + esc(fmtRegimen(s)) + '</strong></div></div>' +
+      '<h3>Why</h3><ul>' + s.rationale.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' + actions + '</div>';
+  }
+  function decisionHtml(dec) {
+    if (!dec) return '';
+    return '<div class="decided ' + dec.action + '"><strong>' + esc(dec.label) + '</strong> by pharmacist at ' + esc(dec.time) +
+      (dec.final ? '<br>Final order: ' + esc(dec.final) : '') + (dec.note ? '<br>Note: ' + esc(dec.note) : '') +
+      ' <button type="button" class="btn btn-sm" data-act="undo" style="margin-left:8px">Undo</button></div>';
+  }
+  function renderDetail(reviews) {
+    var r = reviews.filter(function (x) { return x.rx.id === state.selected; })[0];
+    if (!r) { $('detail').innerHTML = '<div class="box empty">Select a prescription to review.</div>'; return; }
+    var rx = r.rx, d = DRUGS[rx.drug], dec = decisions[rx.id];
+    $('detail').innerHTML =
+      '<div class="box"><div class="patient-head"><div><div class="muted mono" style="font-size:12px">' + esc(rx.id) + ' · ' + esc(rx.uhid) + '</div><h2>' + esc(rx.patientName) + '</h2>' +
+      '<div class="muted">' + esc(rx.age) + ' y · ' + esc(rx.sex) + ' · ' + esc(rx.ward) + '</div></div>' + sevBadge(r.top) + '</div>' +
+      '<dl class="facts"><div><dt>Indication</dt><dd>' + esc(r.g ? r.g.name : rx.indication) + '</dd></div>' +
+      '<div><dt>Weight / CrCl</dt><dd>' + esc(rx.weightKg) + ' kg · ' + (rx.crCl == null ? 'CrCl unknown' : esc(rx.crCl) + ' mL/min') + '</dd></div>' +
+      '<div><dt>Allergies</dt><dd>' + (rx.allergies.length ? esc(rx.allergies.join(', ')) : 'None known') + '</dd></div>' +
+      '<div><dt>Culture</dt><dd>' + (rx.cultureSent ? 'Sent' + (rx.organism ? ' · ' + esc(rx.organism) : ' · pending') : 'Not sent') + '</dd></div></dl>' +
+      '<div class="regimen"><div><div class="muted" style="font-size:12px">Prescribed by ' + esc(rx.prescriber) + ' at ' + timeOf(rx.prescribedAt) + '</div><strong>' + esc(fmtRegimen(rx)) + '</strong></div>' +
+      (d ? '<span class="badge b-neutral">WHO ' + esc(d.aware) + ' · ' + esc(d.cls) + '</span>' : '') + '</div></div>' +
+      '<div class="box"><h2>Stewardship findings (' + r.findings.length + ')</h2>' + findingsHtml(r.findings) + '</div>' +
+      decisionHtml(dec) + suggestionHtml(r, dec) + coverageHtml(r);
+  }
+
+  function render() {
+    var reviews = prescriptions.map(review);
+    renderSummary(reviews); renderFilters(); renderQueue(reviews); renderDetail(reviews);
+  }
+
+  /* ---------- Static tabs ---------- */
+  function renderAntibiogram() {
+    var head = '<thead><tr><th scope="col">Organism (n)</th>' + ABG_DRUGS.map(function (k) { return '<th scope="col" title="' + esc(DRUGS[k].name) + '">' + esc(DRUGS[k].name.split('-')[0].slice(0, 12)) + '</th>'; }).join('') + '</tr></thead>';
+    var body = '<tbody>' + ORGANISMS.map(function (o) {
+      return '<tr><th scope="row" style="font-weight:500;text-align:left"><em>' + esc(o) + '</em> <span class="muted">(' + ISOLATES[o] + ')</span></th>' + ABG_DRUGS.map(function (k) {
+        var v = ABG[o][k];
+        return v == null ? '<td class="muted">—</td>' : '<td class="' + covClass(v) + '">' + v + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+    $('abgTable').innerHTML = head + body;
+  }
+  function renderGuidelines() {
+    $('guideGrid').innerHTML = Object.keys(GUIDELINES).map(function (k) {
+      var g = GUIDELINES[k];
+      var opts = g.noAbx ? '<div class="g-opt"><span>No antibiotic</span><span class="badge b-critical">Not indicated</span></div>' : g.options.map(function (o) {
+        var d = DRUGS[o.drug];
+        return '<div class="g-opt"><span>' + esc(fmtRegimen({ drug: o.drug, dose: o.dose, frequency: o.freq, route: o.route, durationDays: o.days })).replace(fmtDose(o.dose), d.basis === 'mgPerKg' ? o.dose + ' mg/kg' : fmtDose(o.dose)) +
+          (o.note ? '<br><span class="muted">' + esc(o.note) + '</span>' : '') + '</span><span>' + (o.firstLine ? '<span class="badge b-ok">First-line</span> ' : '') +
+          (o.addOn ? '<span class="badge b-neutral">Add-on</span> ' : '') + (o.approval ? '<span class="badge b-major">ID approval</span> ' : '') + '<span class="badge b-neutral">' + d.aware + '</span></span></div>';
+      }).join('');
+      return '<article class="box"><h2>' + esc(g.name) + '</h2><p class="muted" style="margin:0 0 10px;font-size:13px">' +
+        (g.noAbx ? '' : 'Duration ' + (g.dur[0] === g.dur[1] ? g.dur[0] + ' day' + (g.dur[0] > 1 ? 's' : '') : g.dur[0] + '–' + g.dur[1] + ' days') + ' · ') +
+        'Culture: ' + (g.culture.required ? 'required (' + esc(g.culture.specimen) + ')' : esc(g.culture.specimen)) + '</p>' + opts +
+        '<p class="muted" style="margin:10px 0 0;font-size:13px">' + esc(g.notes) + '</p></article>';
+    }).join('');
+  }
+
+  /* ---------- Events: queue + decisions ---------- */
+  $('filters').addEventListener('click', function (e) { var b = e.target.closest('[data-filter]'); if (b) { state.filter = b.dataset.filter; render(); } });
+  $('search').addEventListener('input', function (e) { state.query = e.target.value; render(); });
+  $('rxList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-id]'); if (!b) return;
+    state.selected = b.dataset.id; render();
+    if (window.innerWidth < 900) $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('detail').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var act = b.dataset.act, id = state.selected;
+    if (act === 'undo') { delete decisions[id]; render(); toast('Decision undone'); return; }
+    var rx = prescriptions.filter(function (p) { return p.id === id; })[0], r = review(rx);
+    var noteEl = $('note'), note = noteEl ? noteEl.value.trim() : '';
+    var labels = { approved: 'Suggestion approved', kept: 'Kept as prescribed', escalated: 'Escalated to ID', rejected: 'Suggestion rejected' };
+    var final = act === 'approved' && r.suggestion ? fmtRegimen(r.suggestion) : (act === 'kept' || act === 'rejected') ? fmtRegimen(rx) : '';
+    decisions[id] = { action: act, label: labels[act], note: note, final: final, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    render(); toast(labels[act] + ' · ' + rx.patientName);
+  });
+
+  /* ---------- Tabs ---------- */
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-tab]'); if (!t) return;
+    document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', String(x === t)); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.hidden = p.id !== 'p-' + t.dataset.tab; });
+  });
+
+  /* ---------- Export ---------- */
+  $('exportBtn').addEventListener('click', function () {
+    var rows = [['id', 'patient', 'uhid', 'ward', 'indication', 'prescribed', 'top_severity', 'issues', 'suggested', 'decision', 'final_order', 'note']];
+    prescriptions.forEach(function (rx) {
+      var r = review(rx), dec = decisions[rx.id] || {};
+      rows.push([rx.id, rx.patientName, rx.uhid, rx.ward, r.g ? r.g.name : rx.indication, fmtRegimen(rx), r.top || 'appropriate',
+        r.findings.map(function (f) { return f.title; }).join('; '), r.suggestion ? fmtRegimen(r.suggestion) : '', dec.label || 'pending', dec.final || '', dec.note || '']);
+    });
+    var csv = rows.map(function (row) { return row.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'stewardship-decisions-2026-10-08.csv';
+    a.click(); URL.revokeObjectURL(a.href);
+    toast('Exported ' + (rows.length - 1) + ' reviews');
+  });
+
+  /* ---------- New prescription form ---------- */
+  var form = $('rxForm'), dlg = $('rxDialog');
+  $('f-ind').innerHTML = Object.keys(GUIDELINES).map(function (k) { return '<option value="' + k + '">' + esc(GUIDELINES[k].name) + '</option>'; }).join('');
+  $('f-drug').innerHTML = Object.keys(DRUGS).map(function (k) { return '<option value="' + k + '">' + esc(DRUGS[k].name) + ' (' + DRUGS[k].aware + ')</option>'; }).join('');
+  $('f-org').innerHTML += ORGANISMS.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('');
+
+  function readForm() {
+    var f = form.elements, num = function (n) { return f[n].value === '' ? NaN : Number(f[n].value); };
+    return {
+      id: 'RX-' + nextId, patientName: f.patientName.value.trim(), uhid: f.uhid.value.trim() || 'UH-' + (880000 + nextId),
+      age: num('age'), sex: f.sex.value, weightKg: num('weightKg'), ward: f.ward.value.trim() || 'Unassigned',
+      prescriber: f.prescriber.value.trim() || 'Unknown', indication: f.indication.value, drug: f.drug.value,
+      dose: num('dose'), frequency: Number(f.frequency.value), route: f.route.value, durationDays: num('durationDays'),
+      cultureSent: f.cultureSent.checked, crCl: f.crCl.value === '' ? null : Number(f.crCl.value),
+      allergies: Array.prototype.filter.call(form.querySelectorAll('[name=allergy]'), function (c) { return c.checked; }).map(function (c) { return c.value; }),
+      organism: f.organism.value || null, prescribedAt: new Date().toISOString()
+    };
+  }
+  function renderLive() {
+    var rx = readForm();
+    if (!(rx.weightKg > 0) || !(rx.dose > 0) || !(rx.durationDays > 0)) {
+      $('liveReview').innerHTML = '<h2>Live stewardship check</h2><p class="muted" style="margin:0">Enter weight, dose and duration to see the review as you type.</p>';
+      return;
+    }
+    var r = review(rx);
+    $('liveReview').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><h2 style="margin:0">Live stewardship check</h2>' + sevBadge(r.top) + '</div>' +
+      findingsHtml(r.findings) +
+      (r.suggestion ? '<div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--muted)"><div class="muted" style="font-size:12px">Suggested</div><strong>' + esc(fmtRegimen(r.suggestion)) + '</strong></div>' : '');
+  }
+  function prefillDose() {
+    var g = GUIDELINES[form.elements.indication.value], drug = form.elements.drug.value;
+    var o = g && g.options.filter(function (x) { return x.drug === drug; })[0];
+    if (o && DRUGS[drug].basis === 'mg') { form.elements.dose.value = o.dose; form.elements.frequency.value = o.freq; form.elements.route.value = o.route; form.elements.durationDays.value = o.days; }
+  }
+
+  function openForm() {
+    form.reset();
+    form.elements.indication.value = 'cap_ward'; form.elements.drug.value = 'ceftriaxone';
+    form.elements.dose.value = 1000; form.elements.frequency.value = 2; form.elements.durationDays.value = 7;
+    form.querySelectorAll('[aria-invalid]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+    $('formErr').textContent = '';
+    renderLive(); dlg.showModal(); $('f-name').focus();
+  }
+  $('newBtn').addEventListener('click', openForm);
+  $('closeDlg').addEventListener('click', function () { dlg.close(); });
+  $('cancelDlg').addEventListener('click', function () { dlg.close(); });
+  form.addEventListener('input', renderLive);
+  form.elements.drug.addEventListener('change', function () { prefillDose(); renderLive(); });
+  form.elements.organism.addEventListener('change', function () { if (form.elements.organism.value) form.elements.cultureSent.checked = true; renderLive(); });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var invalid = [];
+    ['patientName', 'age', 'weightKg', 'dose', 'durationDays'].forEach(function (n) {
+      var el = form.elements[n], bad = !el.checkValidity() || el.value.trim() === '';
+      el.setAttribute('aria-invalid', String(bad)); if (bad) invalid.push(el);
+    });
+    if (invalid.length) { $('formErr').textContent = 'Please complete the highlighted fields.'; invalid[0].focus(); return; }
+    var rx = readForm();
+    prescriptions.unshift(rx); nextId++;
+    state.selected = rx.id; state.filter = 'all'; state.query = ''; $('search').value = '';
+    dlg.close(); render();
+    var r = review(rx);
+    toast(rx.patientName + ' added · ' + (r.top ? r.findings.length + ' issue' + (r.findings.length === 1 ? '' : 's') + ' flagged' : 'no issues'));
+  });
+
+  /* ---------- Init ---------- */
+  $('period').textContent = PERIOD;
+  $('targetPct').textContent = TARGET;
+  renderAntibiogram(); renderGuidelines(); render();
+})();
+</script>
+</body>
+</html>
