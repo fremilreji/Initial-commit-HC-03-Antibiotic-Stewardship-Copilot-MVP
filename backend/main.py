@@ -184,10 +184,8 @@ async def analyze_prescription(file: UploadFile = File(...)) -> Dict[str, Any]:
             )
 
         candidate_models = [
-            os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
+            os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
             "gemini-3.5-flash-lite",
-            "gemini-3.1-flash-lite",
-            "gemini-flash-lite-latest",
             "gemini-3.8-flash",
         ]
         candidate_models = list(dict.fromkeys(candidate_models))
