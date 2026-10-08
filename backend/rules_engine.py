@@ -1,6 +1,6 @@
 """
 Deterministic Clinical Rules Engine
-Author: Vaishnavi (vaishnavikc0194@gmail.com)
+Author: Vaishnavi (@vaishnavikc0194-ux)
 Project: HC-03 Antibiotic Stewardship Copilot
 
 Deterministic rule evaluations for:
