@@ -7,12 +7,12 @@
 
 ## 👥 Core Contributors & Project Team
 
-| Contributor | Role & Domain | Primary Responsibilities |
-| :--- | :--- | :--- |
-| **Fremil Reji** | Lead Systems Architect | System integration, AI pipeline, and deployment |
-| **Shivani** | Frontend Engineer | Next.js UI, Stewardship Desk dashboard, interactive components |
-| **Vaishnavi** | Backend & Rules Engineer | FastAPI REST API, deterministic clinical engine, benchmarks mapping |
-| **Nakshatra** | Clinical Informatics & QA | Clinical test cases, ICMR guideline mapping, demo workflows |
+| Contributor | GitHub Handle | Role & Domain | Primary Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **Fremil Reji** | [@fremilreji](https://github.com/fremilreji) | Team Lead & Lead Architect | System integration, AI pipeline, and deployment |
+| **Shivani** | [@20babushivani-wq](https://github.com/20babushivani-wq) | Frontend Lead | Next.js UI, Stewardship Desk dashboard, interactive components |
+| **Vaishnavi** | [@vaishnavikc0194-ux](https://github.com/vaishnavikc0194-ux) | Backend & Data Engineer | FastAPI REST API, deterministic clinical engine, benchmarks mapping |
+| **Nakshatra** | [@Nakshatra-29](https://github.com/Nakshatra-29) | QA & Clinical Assets | Clinical test cases, ICMR guideline mapping, demo workflows |
 
 ---
 
