@@ -22,31 +22,31 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
         <Link
           href="/"
           onClick={() => window.location.reload()}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer py-1"
+          className="flex items-center gap-3 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer py-1"
         >
-          <div className="relative flex h-8 w-[38px] shrink-0 items-center justify-center">
+          <div className="relative flex h-10 w-[48px] shrink-0 items-center justify-center">
             <Image
               src="/logo-transparent.png"
-              alt="attend.to Logo"
-              width={38}
-              height={32}
+              alt="Attend.to Logo"
+              width={48}
+              height={40}
               className="h-full w-full object-contain brand-logo-light"
               priority
             />
             <Image
               src="/logo-white.png"
-              alt="attend.to Logo"
-              width={38}
-              height={32}
+              alt="Attend.to Logo"
+              width={48}
+              height={40}
               className="h-full w-full object-contain brand-logo-dark"
               priority
             />
           </div>
           <div className="flex flex-col justify-center">
-            <span className="text-[17px] font-bold tracking-tight text-foreground leading-tight">
-              attend.to
+            <span className="text-[21px] font-extrabold tracking-tight text-foreground leading-tight">
+              Attend.to
             </span>
-            <span className="hidden text-[11px] font-normal text-muted-foreground leading-tight sm:block">
+            <span className="hidden text-xs font-medium text-muted-foreground leading-tight sm:block">
               Antimicrobial stewardship · Pharmacy
             </span>
           </div>
