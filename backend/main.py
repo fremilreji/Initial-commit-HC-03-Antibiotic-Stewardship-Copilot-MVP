@@ -359,5 +359,5 @@ async def analyze_csv(file: UploadFile = File(...)) -> Dict[str, Any]:
 if __name__ == "__main__":
     import uvicorn
 
-    # Bind strictly to 127.0.0.1 (localhost) so only this machine can connect
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    # Bind to 0.0.0.0 so teammates on Wi-Fi or hotspot can connect to this server
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

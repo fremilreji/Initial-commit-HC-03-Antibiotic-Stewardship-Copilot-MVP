@@ -10,7 +10,13 @@ import { GUIDELINES } from '@/lib/stewardship/data'
 import { mapFastApiResponseToPrescriptions, type FastApiResponse } from '@/lib/stewardship/ai-mapper'
 import type { Prescription } from '@/lib/stewardship/types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+const getApiBase = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    return `${window.location.protocol}//${window.location.hostname}:8000`
+  }
+  return 'http://127.0.0.1:8000'
+}
 
 interface ParsedFile {
   name: string
@@ -50,6 +56,7 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
     // 1. Process image files via FastAPI Gemini backend
     if (imageFiles.length > 0) {
       setIsAnalyzing(true)
+      const apiBase = getApiBase()
       try {
         for (const imageFile of imageFiles) {
           const formData = new FormData()
@@ -57,13 +64,13 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
 
           let response: Response
           try {
-            response = await fetch(`${API_BASE}/api/analyze-prescription`, {
+            response = await fetch(`${apiBase}/api/analyze-prescription`, {
               method: 'POST',
               body: formData,
             })
           } catch {
             throw new Error(
-              `Could not connect to FastAPI backend at ${API_BASE}. Please ensure the backend server is running.`
+              `Could not connect to FastAPI backend at ${apiBase}. Please ensure the backend server is running.`
             )
           }
 
