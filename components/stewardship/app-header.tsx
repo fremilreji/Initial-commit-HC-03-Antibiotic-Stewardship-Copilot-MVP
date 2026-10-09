@@ -24,19 +24,19 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           onClick={() => window.location.reload()}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer py-1"
         >
-          <div className="relative flex size-8 shrink-0 items-center justify-center">
+          <div className="relative flex h-8 w-[38px] shrink-0 items-center justify-center">
             <Image
               src="/logo-transparent.png"
-              alt="Attend.to Logo"
-              width={32}
+              alt="attend.to Logo"
+              width={38}
               height={32}
               className="h-full w-full object-contain brand-logo-light"
               priority
             />
             <Image
               src="/logo-white.png"
-              alt="Attend.to Logo"
-              width={32}
+              alt="attend.to Logo"
+              width={38}
               height={32}
               className="h-full w-full object-contain brand-logo-dark"
               priority
@@ -44,7 +44,7 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           </div>
           <div className="flex flex-col justify-center">
             <span className="text-[17px] font-bold tracking-tight text-foreground leading-tight">
-              Attend.to
+              attend.to
             </span>
             <span className="hidden text-[11px] font-normal text-muted-foreground leading-tight sm:block">
               Antimicrobial stewardship · Pharmacy
