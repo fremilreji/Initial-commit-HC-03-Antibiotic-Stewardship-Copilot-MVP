@@ -15,41 +15,51 @@ const NAV: { view: View; label: string; icon: typeof ListChecks; hint: string }[
   { view: 'guidelines', label: 'Treatment guidelines', icon: BookOpen, hint: 'Hospital empiric therapy policy' },
 ]
 
-export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: View) => void; onUpload: () => void; onNew: () => void }) {
+export function AppHeader({
+  onNavigate,
+  onUpload,
+  onNew,
+  onManual,
+}: {
+  onNavigate: (v: View) => void
+  onUpload: () => void
+  onNew: () => void
+  onManual?: () => void
+}) {
   return (
     <header className="border-b">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
         <Link
           href="/"
           onClick={() => window.location.reload()}
-          className="flex flex-col justify-center transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer py-1"
+          className="flex items-center gap-3 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer py-1"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex h-8 w-[38px] shrink-0 items-center justify-center">
-              <Image
-                src="/logo-transparent.png"
-                alt="Attend.to Logo"
-                width={38}
-                height={32}
-                className="h-full w-full object-contain brand-logo-light"
-                priority
-              />
-              <Image
-                src="/logo-white.png"
-                alt="Attend.to Logo"
-                width={38}
-                height={32}
-                className="h-full w-full object-contain brand-logo-dark"
-                priority
-              />
-            </div>
-            <span className="text-[23px] font-black tracking-tight text-foreground leading-none">
+          <div className="relative flex h-10 w-[48px] shrink-0 items-center justify-center">
+            <Image
+              src="/logo-transparent.png"
+              alt="Attend.to Logo"
+              width={48}
+              height={40}
+              className="h-full w-full object-contain brand-logo-light"
+              priority
+            />
+            <Image
+              src="/logo-white.png"
+              alt="Attend.to Logo"
+              width={48}
+              height={40}
+              className="h-full w-full object-contain brand-logo-dark"
+              priority
+            />
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="text-[21px] font-extrabold tracking-tight text-foreground leading-tight">
               Attend.to
             </span>
+            <span className="hidden text-xs font-medium text-muted-foreground leading-tight sm:block">
+              Antimicrobial stewardship · Pharmacy
+            </span>
           </div>
-          <span className="hidden text-[12px] font-medium text-muted-foreground/90 tracking-normal leading-none mt-1.5 sm:block">
-            Antimicrobial stewardship · Pharmacy
-          </span>
         </Link>
         <div className="flex items-center gap-2">
           <Sheet>
@@ -87,9 +97,15 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
             <Upload data-icon="inline-start" />
             <span className="hidden sm:inline">Upload CSV</span>
           </Button>
-          <Button onClick={onNew}>
+          {onManual && (
+            <Button variant="outline" onClick={onManual} aria-label="Manual prescription entry">
+              <BookOpen data-icon="inline-start" className="size-3.5" />
+              <span className="hidden sm:inline">Manual Entry</span>
+            </Button>
+          )}
+          <Button onClick={onNew} aria-label="Scan prescription photo">
             <Plus data-icon="inline-start" />
-            New prescription
+            AI Scan
           </Button>
         </div>
       </div>

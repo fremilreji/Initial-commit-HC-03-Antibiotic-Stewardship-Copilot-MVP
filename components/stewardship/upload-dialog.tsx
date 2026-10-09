@@ -308,16 +308,16 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
             <>
               {onSwitchToManual ? (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   type="button"
                   onClick={() => {
                     close(false)
                     onSwitchToManual()
                   }}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs font-medium border-primary/30 text-primary hover:bg-primary/10"
                 >
                   <FileText className="size-3.5 mr-1" />
-                  Or enter prescription manually
+                  No photo? Enter manually
                 </Button>
               ) : (
                 <div />

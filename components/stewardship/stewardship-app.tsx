@@ -81,7 +81,12 @@ export function StewardshipApp() {
 
   return (
     <div className="min-h-dvh">
-      <AppHeader onNavigate={setView} onUpload={handleOpenCsvIntake} onNew={handleOpenImageIntake} />
+      <AppHeader
+        onNavigate={setView}
+        onUpload={handleOpenCsvIntake}
+        onNew={handleOpenImageIntake}
+        onManual={() => setFormOpen(true)}
+      />
       <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-6">
         <Tabs value={view} onValueChange={(v) => setView(v as View)} className="gap-8">
           <TabsList>
