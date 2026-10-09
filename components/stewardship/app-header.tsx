@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { BookOpen, FlaskConical, ListChecks, Menu, Plus, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,9 +24,24 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           onClick={() => window.location.reload()}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground" aria-hidden>
-            <FlaskConical className="size-4" />
-          </span>
+          <div className="flex size-9 items-center justify-center rounded-lg bg-card border border-border/80 shadow-xs overflow-hidden p-1">
+            <Image
+              src="/logo-transparent.png"
+              alt="Stewardship Desk Logo"
+              width={28}
+              height={28}
+              className="object-contain dark:hidden"
+              priority
+            />
+            <Image
+              src="/logo-white.png"
+              alt="Stewardship Desk Logo"
+              width={28}
+              height={28}
+              className="object-contain hidden dark:block"
+              priority
+            />
+          </div>
           <div className="leading-tight">
             <p className="text-lg font-semibold tracking-tight">Stewardship Desk</p>
             <p className="hidden text-xs text-muted-foreground sm:block">Antimicrobial stewardship · Pharmacy</p>
