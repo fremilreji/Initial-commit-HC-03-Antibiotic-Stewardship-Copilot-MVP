@@ -1,7 +1,7 @@
 @echo off
 set "PATH=D:\node;%PATH%"
 echo ========================================================
-echo   HC-03: Antibiotic Stewardship Copilot - Launcher
+echo   attend.to: Antibiotic Stewardship Copilot - Launcher
 echo ========================================================
 echo.
 echo Starting FastAPI Backend on port 8000 (0.0.0.0) ...

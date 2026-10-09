@@ -27,7 +27,7 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           <div className="relative flex size-8 shrink-0 items-center justify-center">
             <Image
               src="/logo-transparent.png"
-              alt="Stewardship Desk Logo"
+              alt="Attend.to Logo"
               width={32}
               height={32}
               className="h-full w-full object-contain brand-logo-light"
@@ -35,7 +35,7 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
             />
             <Image
               src="/logo-white.png"
-              alt="Stewardship Desk Logo"
+              alt="Attend.to Logo"
               width={32}
               height={32}
               className="h-full w-full object-contain brand-logo-dark"
@@ -44,7 +44,7 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           </div>
           <div className="flex flex-col justify-center">
             <span className="text-[17px] font-bold tracking-tight text-foreground leading-tight">
-              Stewardship Desk
+              Attend.to
             </span>
             <span className="hidden text-[11px] font-normal text-muted-foreground leading-tight sm:block">
               Antimicrobial stewardship · Pharmacy

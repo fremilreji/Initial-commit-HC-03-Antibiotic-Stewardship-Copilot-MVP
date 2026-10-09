@@ -1,4 +1,4 @@
-# HC-03: Antibiotic Stewardship Copilot (CDSS)
+# attend.to — Antibiotic Stewardship Copilot (CDSS)
 
 > **Healthcare AI / Antimicrobial Resistance (AMR) / Clinical Decision Support System (CDSS)**  
 > Built for hospital clinical pharmacists to audit inpatient and outpatient antibiotic prescriptions against local antibiograms, WHO AWaRe guidelines, and ICMR protocols before drugs are dispensed.

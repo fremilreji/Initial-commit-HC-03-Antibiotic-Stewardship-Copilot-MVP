@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Prescription Analysis API")
+app = FastAPI(title="Attend.to — Prescription Analysis API")
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -166,7 +166,7 @@ async def health_check():
     """Quick health check endpoint — returns system status and loaded data counts."""
     return {
         "status": "ok",
-        "engine": "HC-03 Antibiotic Stewardship Copilot",
+        "engine": "Attend.to Antibiotic Stewardship Copilot",
         "brands_loaded": len(BRANDS),
         "benchmarks_loaded": len(BENCHMARKS),
         "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),

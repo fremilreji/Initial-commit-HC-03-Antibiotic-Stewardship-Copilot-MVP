@@ -8,7 +8,7 @@ const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'Stewardship Desk — Antibiotic prescription review',
+  title: 'Attend.to — Antibiotic prescription review',
   description:
     'Reviews antibiotic prescriptions against the hospital antibiogram and treatment guidelines, flags inappropriate use and suggests safer options for pharmacist approval.',
   generator: 'v0.app',
