@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useMemo, useState } from 'react'
-import { CircleCheck, ShieldAlert } from 'lucide-react'
+import { CircleCheck, ShieldAlert, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -41,10 +41,10 @@ const EMPTY: FormState = {
   prescriber: '',
   indication: 'cap_ward',
   drug: 'ceftriaxone',
-  dose: '1000',
+  dose: '',
   frequency: '1',
   route: 'IV',
-  durationDays: '5',
+  durationDays: '',
   crCl: '',
   penicillinAllergy: false,
   cultureSent: false,
@@ -131,7 +131,11 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
   }
   const hasErrors = Object.values(errors).some(Boolean)
 
-  const preview = useMemo(() => reviewPrescription(buildPrescription(form, 'preview')), [form])
+  const hasOrder = Boolean(form.drug && toNumber(form.dose) && toNumber(form.dose)! > 0)
+  const preview = useMemo(() => {
+    if (!hasOrder) return null
+    return reviewPrescription(buildPrescription(form, 'preview'))
+  }, [form, hasOrder])
 
   const close = (next: boolean) => {
     if (!next) {
@@ -206,6 +210,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                         className={inputClass}
                         value={form.weightKg}
                         onChange={(e) => set('weightKg', e.target.value)}
+                        placeholder="e.g. 60"
                         aria-invalid={touched && errors.weightKg}
                       />
                     )}
@@ -272,6 +277,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                         className={inputClass}
                         value={form.dose}
                         onChange={(e) => set('dose', e.target.value)}
+                        placeholder="e.g. 2000"
                         aria-invalid={touched && errors.dose}
                       />
                     )}
@@ -296,6 +302,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                         className={inputClass}
                         value={form.durationDays}
                         onChange={(e) => set('durationDays', e.target.value)}
+                        placeholder="e.g. 5"
                         aria-invalid={touched && errors.durationDays}
                       />
                     )}
@@ -329,26 +336,51 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
             </div>
 
             <aside className="flex flex-col gap-4 border-t bg-muted/40 p-6 md:border-t-0 md:border-l" aria-live="polite">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live review</p>
-              {preview.findings.length === 0 ? (
-                <div className="flex items-start gap-2 rounded-lg border bg-background p-3 text-sm">
-                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <span>Appropriate per hospital guideline and local susceptibility.</span>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live review</p>
+                {hasOrder && (
+                  <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Real-time
+                  </span>
+                )}
+              </div>
+
+              {!hasOrder ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/80 bg-background/50 p-6 text-center text-muted-foreground">
+                  <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-foreground">Awaiting Order Details</p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      Enter the antibiotic dose to see real-time antibiogram, dosing, and guideline validation as you type.
+                    </p>
+                  </div>
+                </div>
+              ) : preview?.findings.length === 0 ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-sm text-emerald-800 dark:text-emerald-300">
+                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <div>
+                    <p className="font-semibold text-xs leading-none mb-1">Guideline Concordant</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400">Appropriate per hospital guideline and local susceptibility.</p>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <ShieldAlert className="size-4 text-destructive" />
-                    {preview.findings.length} {preview.findings.length === 1 ? 'issue' : 'issues'} will be flagged
+                  <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+                    <ShieldAlert className="size-4" />
+                    {preview!.findings.length} {preview!.findings.length === 1 ? 'issue' : 'issues'} will be flagged
                   </div>
                   <ul className="flex flex-col gap-2">
-                    {preview.findings.map((f) => (
-                      <li key={f.id} className="flex flex-col gap-1 rounded-lg border bg-background p-3">
+                    {preview!.findings.map((f) => (
+                      <li key={f.id} className="flex flex-col gap-1 rounded-lg border bg-background p-3 shadow-2xs">
                         <div className="flex items-center gap-2">
                           <span className={cn('size-2 shrink-0 rounded-full', CATEGORY_META[f.category].dot)} aria-hidden />
-                          <span className="text-sm font-medium leading-snug">{f.title}</span>
+                          <span className="text-xs font-semibold leading-snug">{f.title}</span>
                         </div>
-                        <Badge variant="outline" className={cn('w-fit', SEVERITY_META[f.severity].className)}>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{f.detail}</p>
+                        <Badge variant="outline" className={cn('w-fit mt-0.5 text-[10px]', SEVERITY_META[f.severity].className)}>
                           {SEVERITY_META[f.severity].label}
                         </Badge>
                       </li>
@@ -356,14 +388,15 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                   </ul>
                 </>
               )}
-              {preview.suggestion && (
-                <div className="flex flex-col gap-1 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggested</p>
-                  <p className="text-sm font-medium">
+
+              {hasOrder && preview?.suggestion && (
+                <div className="flex flex-col gap-1.5 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Guideline Suggestion</p>
+                  <p className="text-xs font-semibold text-foreground">
                     {preview.suggestion.kind === 'stop' ? 'Stop antibiotic' : formatRegimen(preview.suggestion)}
                   </p>
                   {preview.suggestion.coverage != null && (
-                    <p className="text-xs text-muted-foreground">{preview.suggestion.coverage}% local susceptibility</p>
+                    <p className="text-[11px] text-muted-foreground">{preview.suggestion.coverage}% local susceptibility</p>
                   )}
                 </div>
               )}

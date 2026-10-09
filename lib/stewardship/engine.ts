@@ -247,59 +247,63 @@ export function reviewPrescription(rx: Prescription): Review {
     }
   }
 
-  const dailyMg = rx.dose * rx.frequency
-  const dailyBasis = drug.doseBasis === 'mgPerKg' ? dailyMg / rx.weightKg : dailyMg
-  const unit = drug.doseBasis === 'mgPerKg' ? ' mg/kg/day' : ''
-  const fmt = (v: number) => (drug.doseBasis === 'mgPerKg' ? `${v.toFixed(1)}${unit}` : `${formatDose(v)}/day`)
-  const expectedDaily = prescribedOption && !prescribedOption.addOn ? prescribedOption.dose * prescribedOption.frequency : null
-  const minDaily = expectedDaily ? expectedDaily * 0.75 : drug.minDaily
+  if (rx.dose > 0) {
+    const dailyMg = rx.dose * rx.frequency
+    const dailyBasis = drug.doseBasis === 'mgPerKg' ? dailyMg / rx.weightKg : dailyMg
+    const unit = drug.doseBasis === 'mgPerKg' ? ' mg/kg/day' : ''
+    const fmt = (v: number) => (drug.doseBasis === 'mgPerKg' ? `${v.toFixed(1)}${unit}` : `${formatDose(v)}/day`)
+    const expectedDaily = prescribedOption && !prescribedOption.addOn ? prescribedOption.dose * prescribedOption.frequency : null
+    const minDaily = expectedDaily ? expectedDaily * 0.75 : drug.minDaily
 
-  if (dailyBasis < minDaily) {
-    add({
-      category: 'dose',
-      severity: 'major',
-      title: 'Under-dosed',
-      detail: `${fmt(dailyBasis)} prescribed; guideline dose is ${fmt(expectedDaily ?? drug.minDaily)}. Sub-therapeutic exposure selects for resistance.`,
-    })
-  } else if (dailyBasis > drug.maxDaily) {
-    add({
-      category: 'dose',
-      severity: 'major',
-      title: 'Exceeds maximum daily dose',
-      detail: `${fmt(dailyBasis)} prescribed; maximum is ${fmt(drug.maxDaily)}.`,
-    })
-  }
-
-  if (renal && !renal.contraindicated && renal.adjusted) {
-    const adjustedDaily = renal.adjusted.dose * renal.adjusted.frequency
-    if (dailyMg > adjustedDaily) {
+    if (dailyBasis < minDaily) {
       add({
         category: 'dose',
         severity: 'major',
-        title: `Not adjusted for renal function (CrCl ${rx.crCl})`,
-        detail: `${renal.note} Prescribed ${formatDose(dailyMg)}/day.`,
+        title: 'Under-dosed',
+        detail: `${fmt(dailyBasis)} prescribed; guideline dose is ${fmt(expectedDaily ?? drug.minDaily)}. Sub-therapeutic exposure selects for resistance.`,
       })
+    } else if (dailyBasis > drug.maxDaily) {
+      add({
+        category: 'dose',
+        severity: 'major',
+        title: 'Exceeds maximum daily dose',
+        detail: `${fmt(dailyBasis)} prescribed; maximum is ${fmt(drug.maxDaily)}.`,
+      })
+    }
+
+    if (renal && !renal.contraindicated && renal.adjusted) {
+      const adjustedDaily = renal.adjusted.dose * renal.adjusted.frequency
+      if (dailyMg > adjustedDaily) {
+        add({
+          category: 'dose',
+          severity: 'major',
+          title: `Not adjusted for renal function (CrCl ${rx.crCl})`,
+          detail: `${renal.note} Prescribed ${formatDose(dailyMg)}/day.`,
+        })
+      }
     }
   }
 
-  const allowedMin = Math.min(guideline.duration.min, prescribedOption?.durationDays ?? Infinity)
-  const allowedMax = Math.max(guideline.duration.max, prescribedOption?.durationDays ?? 0)
-  if (rx.durationDays > allowedMax) {
-    add({
-      category: 'duration',
-      severity: 'major',
-      title: 'Duration longer than recommended',
-      detail: `${rx.durationDays} days prescribed; guideline is ${
-        allowedMin === allowedMax ? `${allowedMax} day${allowedMax > 1 ? 's' : ''}` : `${allowedMin}–${allowedMax} days`
-      }. ${guideline.key === 'surgical_prophylaxis' ? guideline.notes : 'Set a stop date or review date.'}`,
-    })
-  } else if (rx.durationDays < allowedMin) {
-    add({
-      category: 'duration',
-      severity: 'minor',
-      title: 'Duration shorter than recommended',
-      detail: `${rx.durationDays} days prescribed; guideline minimum is ${allowedMin} days.`,
-    })
+  if (rx.durationDays > 0) {
+    const allowedMin = Math.min(guideline.duration.min, prescribedOption?.durationDays ?? Infinity)
+    const allowedMax = Math.max(guideline.duration.max, prescribedOption?.durationDays ?? 0)
+    if (rx.durationDays > allowedMax) {
+      add({
+        category: 'duration',
+        severity: 'major',
+        title: 'Duration longer than recommended',
+        detail: `${rx.durationDays} days prescribed; guideline is ${
+          allowedMin === allowedMax ? `${allowedMax} day${allowedMax > 1 ? 's' : ''}` : `${allowedMin}–${allowedMax} days`
+        }. ${guideline.key === 'surgical_prophylaxis' ? guideline.notes : 'Set a stop date or review date.'}`,
+      })
+    } else if (rx.durationDays < allowedMin) {
+      add({
+        category: 'duration',
+        severity: 'minor',
+        title: 'Duration shorter than recommended',
+        detail: `${rx.durationDays} days prescribed; guideline minimum is ${allowedMin} days.`,
+      })
+    }
   }
 
   if (guideline.culture.required && !rx.cultureSent) {
