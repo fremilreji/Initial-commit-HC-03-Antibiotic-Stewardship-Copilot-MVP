@@ -64,14 +64,23 @@ export function UploadDialog({ open, onOpenChange, onImport, mode = 'image', onS
 
           let response: Response
           try {
-            response = await fetch(`${apiBase}/api/analyze-prescription`, {
+            // Try relative /api path first (proxied seamlessly through Next.js on port 3000 — bypasses all firewalls & CORS)
+            response = await fetch('/api/analyze-prescription', {
               method: 'POST',
               body: formData,
             })
           } catch {
-            throw new Error(
-              `Could not connect to FastAPI backend at ${apiBase}. Please ensure the backend server is running.`
-            )
+            // Fallback to direct backend URL
+            try {
+              response = await fetch(`${apiBase}/api/analyze-prescription`, {
+                method: 'POST',
+                body: formData,
+              })
+            } catch {
+              throw new Error(
+                `Could not connect to FastAPI backend at ${apiBase} or /api. Please ensure the backend server is running.`
+              )
+            }
           }
 
           if (!response.ok) {
