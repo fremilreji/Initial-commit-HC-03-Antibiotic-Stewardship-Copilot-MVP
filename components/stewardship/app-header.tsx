@@ -24,13 +24,13 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
           onClick={() => window.location.reload()}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg cursor-pointer"
         >
-          <div className="flex size-9 items-center justify-center rounded-lg bg-card border border-border/80 shadow-xs overflow-hidden p-1">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted border border-border shadow-xs overflow-hidden p-1">
             <Image
               src="/logo-transparent.png"
               alt="Stewardship Desk Logo"
               width={28}
               height={28}
-              className="object-contain dark:hidden"
+              className="size-full object-contain brand-logo-light"
               priority
             />
             <Image
@@ -38,7 +38,7 @@ export function AppHeader({ onNavigate, onUpload, onNew }: { onNavigate: (v: Vie
               alt="Stewardship Desk Logo"
               width={28}
               height={28}
-              className="object-contain hidden dark:block"
+              className="size-full object-contain brand-logo-dark"
               priority
             />
           </div>

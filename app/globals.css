@@ -173,3 +173,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Adaptive brand logo for both system theme and class-based dark mode */
+.brand-logo-light {
+  display: block !important;
+}
+.brand-logo-dark {
+  display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-logo-light {
+    display: none !important;
+  }
+  .brand-logo-dark {
+    display: block !important;
+  }
+}
+
+.dark .brand-logo-light {
+  display: none !important;
+}
+.dark .brand-logo-dark {
+  display: block !important;
+}
+
