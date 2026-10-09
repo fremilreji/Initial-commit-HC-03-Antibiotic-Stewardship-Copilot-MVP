@@ -93,3 +93,6 @@ Double-click `start-servers.bat` in the root folder. It starts both the FastAPI 
 3. **Antibiotic Whitelist Check:** Non-antimicrobial drugs (such as Lisinopril, Amlodipine, Metformin) automatically bypass stewardship checks with a clean blue badge and zero red flags.
 4. **Safety Checkpoint (Human-in-the-Loop):** Pharmacists verify the OCR extraction against the physical prescription pad via the **"Verify Extracted Text: Matches Physical Prescription"** button before clinical rules unlock.
 5. **Data Citations:** Explicitly references **ICMR Antimicrobial Guidelines 2024** and simulated hospital antibiogram records.
+6. **Token-Optimized Perception Layer:** In-memory PIL downscaling to $\le 1024\text{px}$ reduces Gemini vision tiling from ~1,600 down to ~258 tokens (75%+ token savings).
+7. **Zero-Token Batch CSV API (`/api/analyze-csv`):** Ingests and evaluates hospital EHR batch CSV files using local deterministic Python rules at **0 token cost**.
+8. **Health Monitoring Endpoint (`/api/health`):** Real-time status reporting loaded brand mappings (62) and clinical benchmarks (21).
