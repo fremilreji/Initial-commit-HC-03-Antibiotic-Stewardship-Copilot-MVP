@@ -59,7 +59,12 @@ const FREQUENCIES = [
 ]
 
 const inputClass =
-  'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30'
+  'h-9 w-full rounded-md border border-input bg-background text-foreground px-3 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive'
+
+const selectClass = cn(
+  inputClass,
+  'cursor-pointer [&_option]:bg-white [&_option]:text-zinc-900 dark:[&_option]:bg-[#18181b] dark:[&_option]:text-[#f4f4f5]'
+)
 
 function toNumber(v: string) {
   const n = Number(v)
@@ -195,7 +200,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                   </Field>
                   <Field label="Sex">
                     {(id) => (
-                      <select id={id} className={inputClass} value={form.sex} onChange={(e) => set('sex', e.target.value as 'M' | 'F')}>
+                      <select id={id} className={selectClass} value={form.sex} onChange={(e) => set('sex', e.target.value as 'M' | 'F')}>
                         <option value="M">Male</option>
                         <option value="F">Female</option>
                       </select>
@@ -236,7 +241,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
               <Section title="Order">
                 <Field label="Indication">
                   {(id) => (
-                    <select id={id} className={inputClass} value={form.indication} onChange={(e) => set('indication', e.target.value)}>
+                    <select id={id} className={selectClass} value={form.indication} onChange={(e) => set('indication', e.target.value)}>
                       {Object.values(GUIDELINES).map((g) => (
                         <option key={g.key} value={g.key}>
                           {g.name}
@@ -248,7 +253,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Antibiotic">
                     {(id) => (
-                      <select id={id} className={inputClass} value={form.drug} onChange={(e) => set('drug', e.target.value)}>
+                      <select id={id} className={selectClass} value={form.drug} onChange={(e) => set('drug', e.target.value)}>
                         {Object.values(DRUGS).map((d) => (
                           <option key={d.key} value={d.key}>
                             {d.name} ({d.aware})
@@ -259,7 +264,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                   </Field>
                   <Field label="Route">
                     {(id) => (
-                      <select id={id} className={inputClass} value={form.route} onChange={(e) => set('route', e.target.value as Route)}>
+                      <select id={id} className={selectClass} value={form.route} onChange={(e) => set('route', e.target.value as Route)}>
                         <option value="IV">IV</option>
                         <option value="PO">PO</option>
                         <option value="IM">IM</option>
@@ -284,7 +289,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                   </Field>
                   <Field label="Frequency">
                     {(id) => (
-                      <select id={id} className={inputClass} value={form.frequency} onChange={(e) => set('frequency', e.target.value)}>
+                      <select id={id} className={selectClass} value={form.frequency} onChange={(e) => set('frequency', e.target.value)}>
                         {FREQUENCIES.map((f) => (
                           <option key={f.value} value={f.value}>
                             {f.label}
@@ -322,7 +327,7 @@ export function PrescriptionFormDialog({ open, onOpenChange, onSubmit }: Props) 
                 </label>
                 <Field label="Organism isolated" hint="if known">
                   {(id) => (
-                    <select id={id} className={inputClass} value={form.organism} onChange={(e) => set('organism', e.target.value)}>
+                    <select id={id} className={selectClass} value={form.organism} onChange={(e) => set('organism', e.target.value)}>
                       <option value="">Not yet known (empiric)</option>
                       {ORGANISMS.map((o) => (
                         <option key={o} value={o}>

@@ -198,3 +198,33 @@
   display: block !important;
 }
 
+/* Fix native select option readability across browsers in dark/light modes */
+select {
+  color-scheme: light dark;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #09090b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) select {
+    color-scheme: dark;
+  }
+  :root:not(.light) select option {
+    background-color: #18181b !important;
+    color: #f4f4f5 !important;
+  }
+}
+
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+
